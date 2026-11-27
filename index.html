@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title data-i18n="uiTitle">Area of a Parallelogram</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/para.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/welcome.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+  <!-- Stars twinkling behind everything (js/scenery.js fills it). -->
+  <div class="stars" id="stars" aria-hidden="true"></div>
+
+  <main id="app">
+    <!-- The 16:9 box the whole lesson is staged in. -->
+    <div class="frame" id="frame">
+
+      <!-- The mascot's centre-stage slot, BEHIND the board on purpose. -->
+      <div class="slot slot--hero" id="slotHero">
+        <div class="bubble" id="bubble" hidden>
+          <span class="type-wrap" id="bubbleType">
+            <span class="type-ghost"></span>
+            <span class="type" aria-live="polite"><span class="txt"></span></span>
+          </span>
+          <svg class="bubble-tail" viewBox="0 0 44 42" aria-hidden="true">
+            <path d="M4 0 H42 V8 C36 20 24 30 2 42 C8 32 8 20 4 8 Z" fill="var(--bubble-bg)" />
+            <path d="M42 8 C36 20 24 30 2 42 C8 32 8 20 4 8" fill="none"
+                  stroke="var(--note-edge)" stroke-width="4"
+                  stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>
+        </div>
+      </div>
+
+      <section class="board" id="board" aria-hidden="true">
+        <header class="board__top" id="boardTop">
+          <div class="prompt" id="prompt">
+            <div class="prompt__mascot" id="slotHeader"></div>
+            <p class="prompt__line">
+              <span class="type-wrap" id="promptType">
+                <span class="type-ghost"></span>
+                <span class="type" aria-live="polite"><span class="txt"></span></span>
+              </span>
+            </p>
+          </div>
+        </header>
+
+        <div class="board__stage" id="boardStage">
+          <!-- The whole lesson's picture, in ONE svg: 1000 x 420, wide, so a
+               figure standing left leaves room for the working. Each section
+               builds its own group (js/para.js, the sections). -->
+          <svg class="figure" id="figure" viewBox="0 0 1000 420"
+               role="img" data-i18n-attr="aria-label:a11yFigure" aria-label="The figure on the board">
+            <defs>
+              <!-- Measured over the whole picture, not the mark: a level or upright
+                   line has a box with no height or width, and a region measured
+                   against one collapses to nothing and takes the line with it. -->
+              <filter id="partGlow" filterUnits="userSpaceOnUse" x="-200" y="-200" width="1400" height="820">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="bloom" />
+                <feMerge>
+                  <feMergeNode in="bloom" />
+                  <feMergeNode in="bloom" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <pattern id="gardenDots" width="22" height="22" patternUnits="userSpaceOnUse">
+                <circle cx="6" cy="7" r="2.2" fill="rgba(255,255,255,.22)" />
+                <circle cx="16" cy="16" r="1.6" fill="rgba(255,255,255,.16)" />
+              </pattern>
+            </defs>
+            <!-- Each section's own group, in playing order. -->
+            <g id="figWarm" hidden></g>
+            <g id="figCut" hidden></g>
+            <g id="figFormula" hidden></g>
+            <g id="figHeight" hidden></g>
+            <g id="figSlant" hidden></g>
+            <g id="figRecall" hidden></g>
+            <g id="figPractice" hidden></g>
+            <g id="figEnd" hidden></g>
+            <!-- Where a burst of confetti is thrown over the figure. -->
+            <g id="figBurst" aria-hidden="true"></g>
+          </svg>
+
+          <!-- The DOM over the picture: cards, the keypad, the equation, the perch. -->
+          <div class="layer" id="layer" data-i18n-attr="aria-label:a11yLayer" aria-label="The working"></div>
+        </div>
+
+        <footer class="board__bottom" id="boardBottom">
+          <div class="tray" id="tray" hidden data-i18n-attr="aria-label:a11yNamesTray" aria-label="Names to drag"></div>
+          <div class="tray tray--choice" id="choices" hidden role="group"
+               data-i18n-attr="aria-label:a11yAnswers" aria-label="Choose your answer"></div>
+        </footer>
+      </section>
+
+      <!-- One element for a beat finished by SEVERAL actions to announce on. -->
+      <span id="gate" hidden></span>
+
+      <!-- Continue: a round lime button with a white arrow, in the frame's corner. -->
+      <button class="next-btn" id="nextBtn" type="button" hidden data-i18n-attr="aria-label:a11yNext" aria-label="Continue">
+        <svg class="next-btn__arrow" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <path d="M14 37 H50 V17 L88 50 L50 83 V63 H14 Z" fill="currentColor"
+                stroke="currentColor" stroke-width="10" stroke-linejoin="round" />
+        </svg>
+      </button>
+
+      <!-- The last screen: replay the lesson. -->
+      <div class="end-actions" id="endActions" hidden>
+        <button class="end-btn end-btn--primary" id="replayBtn" type="button">
+          <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <path d="M63 27.5 A26 26 0 1 1 37 27.5" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" />
+            <path d="M51 19.5 L41.8 39.8 L28.8 17.2 Z" fill="currentColor" stroke="currentColor" stroke-width="8" stroke-linejoin="round" />
+          </svg>
+          <span data-i18n="btnReplay">Replay</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Welcome, over everything until Start is pressed. -->
+    <section class="welcome" id="welcome">
+      <!-- The picture (assets/images/welcome.png), brought to life by js/welcome.js. -->
+      <div class="welcome__art" aria-hidden="true">
+        <div class="welcome__scene" id="welcomeScene">
+          <img class="welcome__img" src="assets/images/welcome.png" alt="" draggable="false"
+               fetchpriority="high" decoding="async" />
+        </div>
+      </div>
+      <div class="welcome__stage">
+      <div class="welcome__title" id="welcomeTitle">
+        <h1 class="banner banner--title">
+          <span class="banner__text">
+            <span data-i18n="uiTitleTop">Area of a</span>
+            <span class="banner__hi" data-i18n="uiTitleBottom">Parallelogram</span>
+          </span>
+        </h1>
+      </div>
+      <div class="welcome__cta">
+      <div class="loader" id="loader" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+           aria-valuenow="0" data-i18n-attr="aria-label:loadingAria">
+        <span class="loader__body">
+          <span class="loader__text"><span data-i18n="loadingLabel"></span><span class="loader__pct" id="loaderPct"></span></span>
+          <span class="loader__line"><span class="loader__fill" id="loaderFill"></span></span>
+        </span>
+      </div>
+      <button class="start-btn" id="startBtn" type="button" hidden data-i18n="btnStart">Start</button>
+      </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/libs/gsap.min.js"></script>
+  <script src="js/libs/Flip.min.js"></script>
+  <!-- Words by key (js/i18n.js) from locales/locales.json; the .js copy is
+       read first so file:// works too. -->
+  <script src="locales/locales.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/motion.js"></script>
+  <script src="js/flow.js"></script>
+  <script src="js/mathtext.js"></script>
+  <script src="js/typer.js"></script>
+  <script src="js/mascot.js"></script>
+  <script src="js/scenery.js"></script>
+  <script src="js/para.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/widgets.js"></script>
+  <script src="js/welcome.js"></script>
+  <script src="js/pages.js"></script>
+  <!-- The sections of the lesson, in playing order. -->
+  <script src="js/s1-warmup.js"></script>
+  <script src="js/s2-cut.js"></script>
+  <script src="js/s3-formula.js"></script>
+  <script src="js/s4-height.js"></script>
+  <script src="js/s5-slant.js"></script>
+  <script src="js/s6-recall.js"></script>
+  <script src="js/s7-practice.js"></script>
+  <script src="js/s8-summary.js"></script>
+  <script src="js/loader.js"></script>
+  <script src="js/script.js"></script>
+  <!-- TEMPORARY: the Back / Skip / Replay page bar (bottom-right). Delete
+       this line and js/devnav.js to remove it; nothing else refers to it. -->
+  <script src="js/devnav.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[  122906ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://accounts.google.com/v3/signin/identifier?continue=https://accounts.google.com/signin/chrome/sync/finish?est%3DAJD7mipUaRtnNE1JY4t4A2waNfvojFWEfFwYO7yEM1UPJPpwmVXSXu65FfylLYqLMG75XWpYFbbxHwIpTn9wEX0%26continue%3Dhttps://www.google.com/&flow=history_opt_in&ssp=1&theme=mn&flowName=GlifDesktopChromeSync&dsh=S135900088:1795698017873022:1
+[  122911ms] [LOG] %c%s color: red; background: yellow; font-size: 24px; WARNING! @ https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.z_O9LErlX5I.es5.O/am=D_wIAQAAAAAc4UkAACACgOI3AIAAwRpwTwtgAoQOAAAAAAAAAABwkQCALAII/d=1/excm=_b,_tp,identifierview/ed=1/dg=0/wt=2/ujg=1/rs=AOaEmlE7QmjbEQZFhve8YRWC8Ny8s3SAeQ/dti=1/m=_b,_tp:618
+[  122911ms] [LOG] %c%s font-size: 18px; Using this console may allow attackers to impersonate you and steal your information using an attack called Self-XSS.
+Do not enter or paste code that you do not understand. @ https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.z_O9LErlX5I.es5.O/am=D_wIAQAAAAAc4UkAACACgOI3AIAAwRpwTwtgAoQOAAAAAAAAAABwkQCALAII/d=1/excm=_b,_tp,identifierview/ed=1/dg=0/wt=2/ujg=1/rs=AOaEmlE7QmjbEQZFhve8YRWC8Ny8s3SAeQ/dti=1/m=_b,_tp:618
+[  123359ms] [ERROR] Framing 'https://accounts.youtube.com/' violates the following report-only Content Security Policy directive: "frame-ancestors 'self'". The violation has been logged, but no further action has been taken.
+ @ :1
+[  149002ms] Error
+    at mojo.internal.interfaceSupport.InterfaceRemoteBase.cleanupAndFlushPendingResponses_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:44914)
+    at mojo.internal.interfaceSupport.InterfaceRemoteBase.onError (chrome://resources/mojo/mojo/public/js/bindings.js:1:44661)
+    at mojo.internal.interfaceSupport.Endpoint.onError (chrome://resources/mojo/mojo/public/js/bindings.js:1:39029)
+    at mojo.internal.interfaceSupport.Router.onError_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:36590)
+    at mojo.internal.interfaceSupport.HandleReader.read_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:50098)
+[  149002ms] Error
+    at mojo.internal.interfaceSupport.InterfaceRemoteBase.cleanupAndFlushPendingResponses_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:44914)
+    at mojo.internal.interfaceSupport.InterfaceRemoteBase.onError (chrome://resources/mojo/mojo/public/js/bindings.js:1:44661)
+    at mojo.internal.interfaceSupport.Endpoint.onError (chrome://resources/mojo/mojo/public/js/bindings.js:1:39029)
+    at mojo.internal.interfaceSupport.Router.onError_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:36590)
+    at mojo.internal.interfaceSupport.HandleReader.read_ (chrome://resources/mojo/mojo/public/js/bindings.js:1:50098)
+[  298555ms] TypeError: Cannot read properties of null (reading 'addEventListener')
+    at i._toggleScrollListener (chrome://settings/lazy_load.js:2399:2491)
+    at i.toggleScrollListener (chrome://settings/lazy_load.js:2399:2747)
+    at i.<anonymous> (chrome://settings/lazy_load.js:2443:20347)
+    at chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js:1:1382

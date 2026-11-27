@@ -1,0 +1,4 @@
+- main [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - generic: Let’s have a quick warmup!
+    - button "Continue" [ref=f2e15] [cursor=pointer]

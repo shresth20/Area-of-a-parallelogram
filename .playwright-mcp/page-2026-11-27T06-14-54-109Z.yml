@@ -1,0 +1,14 @@
+- main [ref=f3e2]:
+  - generic [ref=f3e4]:
+    - generic:
+      - generic:
+        - heading "Area of a Parallelogram" [level=1]:
+          - generic [aria-hidden]: ///
+          - generic:
+            - generic: Area of a
+            - generic: Parallelogram
+          - generic [aria-hidden]: ///
+      - progressbar "Loading the lesson" [ref=f3e8]:
+        - generic [ref=f3e10]:
+          - generic [ref=f3e11]: Loading
+          - generic [ref=f3e12]: 4%

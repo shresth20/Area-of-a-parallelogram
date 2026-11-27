@@ -1,0 +1,900 @@
+/* ==========================================================================
+   Area of a Parallelogram -- base layer: the space theme
+   A night sky over a moon base (assets/images/bg.png) with a holo console
+   floating on it, Swiftee on the header or beside the figure, stars behind.
+   Every colour below is a token; no scene writes a raw hex value.
+   ========================================================================== */
+
+/* ---- Fonts (bundled, offline only) ---------------------------------------- */
+@font-face {
+  font-family: "Baloo 2";
+  src: url("../assets/fonts/baloo_2/baloo2-variablefont_wght.woff2") format("woff2-variations");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+:root {
+  /* ---- the space palette (from the theme art) --------------------------- */
+  --space-0:    #050f2c;     /* the deepest navy                            */
+  --space-1:    #0b1c48;     /* panels                                      */
+  --space-2:    #12295f;     /* panels, lit                                 */
+  --cyan:       #3FE3FF;     /* every rim                                   */
+  --cyan-deep:  #16A9D9;
+  --cyan-soft:  #9DF3FF;
+  --lime:       #B8F23C;     /* the accent: Continue, key words, A = b x h  */
+  --lime-deep:  #7FC41A;
+  --lime-soft:  #DCFF85;
+  --white:      #FFFFFF;
+  --ink:        #FFFFFF;     /* every word on the dark                     */
+  --ink-soft:   #B9D3FF;
+  --ink-dim:    #7F97C9;
+
+  /* ---- the figure's own inks (the storyboard's colours) ------------------ */
+  --pg-fill:        #3FB2EA;   /* the parallelogram, light blue              */
+  --pg-fill-lit:    #63CBF7;
+  --pg-edge:        #A8EEFF;   /* its outline                                */
+  --pg-teal:        #2FF0D0;   /* the base                                   */
+  --pg-teal-deep:   #19B89E;
+  --pg-orange:      #FFA03C;   /* the height, the cut triangle               */
+  --pg-orange-deep: #E07E22;
+  --pg-purple:      #C98CFF;   /* a slanting side                            */
+  --pg-grey:        #A9BBDD;   /* a diagonal, a neutral line                 */
+  --pg-green:       #7CE08A;   /* the garden bed                             */
+  --pg-green-deep:  #3DAE5A;
+  --pg-soil:        #B97A4A;
+
+  /* ---- right and wrong: subtle green, soft amber (never red) ------------- */
+  --right-fill:   #58F08A;
+  --right-border: #2EC866;
+  --wrong-fill:   #FFC24A;
+  --wrong-border: #E3A21D;
+
+  /* ---- surfaces ---------------------------------------------------------- */
+  --panel:      color-mix(in srgb, var(--space-1) 90%, transparent);
+  --panel-lit:  color-mix(in srgb, var(--space-2) 92%, transparent);
+  --panel-rim:  var(--cyan);
+  --panel-glow: color-mix(in srgb, var(--cyan) 38%, transparent);
+  --panel-glow-dim: color-mix(in srgb, var(--cyan) 14%, transparent);
+  --board-bg:   color-mix(in srgb, var(--space-0) 62%, transparent);
+  --board-rim:  color-mix(in srgb, var(--cyan) 42%, transparent);
+
+  /* The speech bubble: the theme's message box -- a dark panel, a cyan rim,
+     white words. The hero's, the header's and the perch's all wear it. */
+  --bubble-bg:       #0A1F4F;             /* the foot, and the tail's fill */
+  --bubble-rim:      var(--cyan);
+  --bubble-ink:      var(--white);
+  --bubble-glow:     var(--panel-glow);
+  --bubble-glow-dim: var(--panel-glow-dim);
+
+  --page-bg:      #0A1A45;
+  --page-bg-deep: #050C26;
+
+  /* ---- raised controls ---------------------------------------------------- */
+  --horizon:     var(--lime-deep);
+  --horizon-deep: #2F7A0C;   /* the round Continue button's wall */
+  /* The round Continue button: a deeper green than the lime, so its white
+     arrow stands out. */
+  --round-face-1: #9BE33F;
+  --round-face-2: #5DBE1C;
+  --round-face-3: #3F9A12;
+  --round-rim:    #A8EC52;
+  --round-ink-shadow: #276A0A;
+  --button-bg:   var(--lime);
+  --button-text: #16331A;
+
+  --pill-border:   var(--cyan);
+  --pill-face-mid: color-mix(in srgb, var(--space-2) 80%, var(--cyan-deep));
+  --pill-face-low: var(--space-1);
+  --pill-wall:     color-mix(in srgb, var(--cyan-deep) 70%, var(--space-0));
+
+  --next-face-1: var(--lime-soft);
+  --next-face-2: var(--lime);
+  --next-face-3: var(--lime-deep);
+  --next-text:   #16331A;
+
+  --glow-board:      color-mix(in srgb, var(--cyan) 22%, transparent);
+  --glow-board-soft: color-mix(in srgb, var(--cyan) 12%, transparent);
+  --glow-board-dim:  color-mix(in srgb, var(--cyan-deep) 10%, transparent);
+  --shadow-soft: color-mix(in srgb, var(--space-0) 45%, transparent);
+  --shadow-deep: color-mix(in srgb, var(--space-0) 70%, transparent);
+
+  --font-display: "Baloo 2", system-ui, sans-serif;
+  --font-body: "Baloo 2", system-ui, sans-serif;
+
+  --art-page: url("../assets/images/bg.png");
+
+  /* ---- stacking ---------------------------------------------------------- */
+  --z-stars: 0;
+  --z-hero: 1;
+  --z-board: 2;
+  --z-stage: 1;
+  --z-layer: 2;
+  --z-footer: 3;
+  --z-header: 4;
+  --z-next: 6;
+  --z-welcome: 9;
+
+  --board-w: min(1500px, 96vw, 160vh);
+  --row-top: 16%;
+  --row-bottom: 11%;
+  --board-pad-y: clamp(10px, 2.2vh, 22px);
+  --board-pad-x: clamp(18px, calc(var(--board-w) * .032), 44px);
+  --stage-full-h: calc(var(--board-w) * 9 / 16 - 2 * var(--board-pad-y) - 6px);
+  --stage-full-w: calc(var(--board-w) - 2 * var(--board-pad-x) - 6px);
+
+  /* The bird beside a figure, and the type of the bubble it speaks from, at
+     the circle game's sizes: the bird 36% of the stage's full height, the
+     type 5.3% of half its width. */
+  --bird-beside: calc(var(--stage-full-h) * .36);
+  --bubble-beside-fs: calc(var(--stage-full-w) * .5 * .05);
+}
+
+/* ---- Reset ------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+  min-height: 100dvh;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  background:
+    var(--art-page) center / cover no-repeat,
+    linear-gradient(180deg, var(--page-bg) 0%, var(--page-bg-deep) 100%);
+  background-color: var(--page-bg);
+}
+
+/* ---- The stars -------------------------------------------------------------
+   A few dozen points of light behind everything, each twinkling on its own
+   clock (js/scenery.js places them). Opacity only. */
+.stars {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-stars);
+  pointer-events: none;
+  overflow: hidden;
+}
+.stars__dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--white) 0%, color-mix(in srgb, var(--cyan-soft) 70%, transparent) 50%, transparent 72%);
+  opacity: 0;
+  animation: star-twinkle var(--twinkle, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: .1; transform: scale(.7); }
+  50%      { opacity: .9; transform: scale(1.15); }
+}
+
+/* ---- Shell -------------------------------------------------------------- */
+#app {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+.frame {
+  position: relative;
+  width: var(--board-w);
+  aspect-ratio: 16 / 9;
+}
+
+/* ==========================================================================
+   The board -- a holo console
+   A dark glass panel with a faint cyan rim and a soft glow, so the figure,
+   the bird and the working are grouped on the sky without a bright slab
+   under them.
+   ========================================================================== */
+.board {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-board);
+  display: grid;
+  grid-template-rows: var(--row-top) minmax(0, 1fr) var(--row-bottom);
+  padding: var(--board-pad-y) var(--board-pad-x);
+  /* No panel skin by default: the content sits straight on the sky.
+     Add .board--panel to bring the holo-console panel back. */
+  border: 2px solid transparent;
+  background: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.board.board--panel {
+  border-radius: clamp(18px, 3.2vh, 32px);
+  border-color: var(--board-rim);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--space-1) 58%, transparent) 0%,
+      color-mix(in srgb, var(--space-0) 66%, transparent) 100%);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cyan) 14%, transparent),
+    inset 0 0 60px color-mix(in srgb, var(--cyan-deep) 8%, transparent),
+    0 0 18px 0 var(--glow-board),
+    0 0 46px 10px var(--glow-board-soft),
+    0 22px 48px var(--shadow-deep);
+}
+.board.show { opacity: 1; visibility: visible; }
+.board.is-headless { --row-top: 0%; }
+.board.is-bare { --row-top: 0%; --row-bottom: 0%; }
+.board:not(:has(.board__bottom > :not([hidden]))) { --row-bottom: 0%; }
+.board { transition: grid-template-rows .45s ease; }
+
+.board__top {
+  position: relative;
+  z-index: var(--z-header);
+  min-height: 0;
+  display: grid;
+  align-items: end;
+}
+.board__bottom {
+  position: relative;
+  z-index: var(--z-footer);
+  min-height: 0;
+}
+.board__stage {
+  position: relative;
+  z-index: var(--z-stage);
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- The prompt row (header) ---------------------------------------------
+   The bird, bottom-aligned on the band, and the line it is saying beside it
+   in the theme's message box -- a dark panel with a cyan rim and a small
+   tail pointing back at the bird. The pair is centred on the line's width. */
+.prompt {
+  --prompt-bird-h: 165%;   /* the bird's height, x the row's */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding-inline: clamp(8px, 2%, 28px);
+}
+.prompt__mascot {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  height: var(--prompt-bird-h);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.prompt__line {
+  position: relative;
+  /* pulled in over the sprite's clear margin, so the tail points close
+     to the bird */
+  --tail-w: .72em;
+  --tail-h: 1em;
+  --rim-w: 3px;
+  margin: 0 0 0 calc(var(--tail-w) - 1.2em);
+  /* Centred on the bird's middle, not the row's: the bird stands on the
+     row's floor and rises past its top, so its middle is higher than the
+     row's by half the overhang. (top % is of the row's height.) */
+  align-self: center;
+  top: calc((100% - var(--prompt-bird-h)) / 2);
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(16px, 3vh, 30px);
+  line-height: 1.22;
+  color: var(--ink);
+  padding: .34em .9em .4em;
+  border: var(--rim-w) solid var(--panel-rim);
+  border-radius: .7em;
+  /* solid, so nothing shows through where the tail joins the rim */
+  background: linear-gradient(180deg, var(--space-2) 0%, var(--space-1) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent),
+    0 0 14px 1px var(--panel-glow-dim),
+    0 8px 20px var(--shadow-soft);
+  /* empty: no box around nothing */
+  transition: opacity .25s ease;
+}
+/* No box around nothing: the panel shows with its first word, not with
+   the width the line reserves a beat before (typer.js). */
+.prompt__line:not(:has(.type .wd.in)) {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The tail, pointing left at the bird: a solid triangle in the rim's
+   colour, and over it the same triangle in the panel's fill, nudged right
+   so a rim of even width shows on its two slanted sides. The fill runs on
+   past the panel's own border, so tail and panel read as one shape. */
+.prompt__line::before,
+.prompt__line::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: var(--tail-w);
+  height: var(--tail-h);
+  transform: translateY(-50%);
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  pointer-events: none;
+}
+.prompt__line::before {
+  left: calc(-1 * var(--tail-w));
+  background: var(--panel-rim);
+  filter: drop-shadow(0 0 6px var(--panel-glow));
+}
+/* With the tail 0.72em x 1em, its point's half-angle has tan = 0.694 and
+   sin = 0.571: the fill's point sits rim / 0.571 = 1.75 rims in, and the
+   fill runs 3 rims past the panel's edge, its sides parallel to the rim's. */
+.prompt__line::after {
+  left: calc(-1 * var(--tail-w) + var(--rim-w) * 1.75);
+  width: calc(var(--tail-w) + var(--rim-w) * 1.25);
+  height: calc(var(--tail-h) + var(--rim-w) * 1.736);
+  background: color-mix(in srgb, var(--space-2) 50%, var(--space-1));
+}
+.prompt__line .type { white-space: pre-wrap; }
+/* The key word in a line -- a part's name -- in the accent, as the theme
+   sets "base (b)" and "height (h)". */
+.wd--key { color: var(--lime); font-weight: 800; }
+
+/* ==========================================================================
+   The figure (one SVG) and the DOM layer over it
+   ========================================================================== */
+.figure {
+  position: absolute;
+  --figure-grow: 6%;
+  --figure-lift: 0%;
+  inset: calc(var(--figure-grow) / -2);
+  top: calc(var(--figure-grow) / -2 - var(--figure-lift));
+  display: block;
+  width: calc(100% + var(--figure-grow));
+  height: calc(100% + var(--figure-grow));
+  overflow: visible;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.figure g[hidden] { display: none; }
+.board:not(.is-headless):not(.is-bare) .figure { --figure-lift: 2%; }
+
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-layer);
+  pointer-events: none;
+}
+.layer > * { pointer-events: auto; }
+.layer[hidden] { display: none; }
+
+/* Every word set on the figure. User units, so it scales with the shape. */
+.figure-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: .3px;
+  fill: var(--ink);
+  paint-order: stroke fill;
+  stroke: color-mix(in srgb, var(--space-0) 70%, transparent);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+/* ==========================================================================
+   The names to drag, and the answers to tap
+   ========================================================================== */
+.tray {
+  /* Lifted off the moon's ground line in the page art, so the names and the
+     answers float on the sky instead of sitting on the ground. In board
+     units, so the lift is the same at every board size. */
+  --tray-lift: calc(var(--board-w) * 9 / 16 * .05);
+  position: absolute;
+  inset: calc(-1 * var(--tray-lift)) 0 var(--tray-lift) 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1.2%, 16px);
+  padding: 0 1%;
+}
+.tray[hidden] { display: none; }
+.tray--choice { gap: clamp(10px, 2%, 32px); }
+
+.chip,
+.choice {
+  --edge: 4px;
+  position: relative;
+  appearance: none;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: .32em 1.15em .38em;
+  border: 3px solid var(--pill-border);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pill-face-mid) 0%, var(--pill-face-low) 100%);
+  box-shadow:
+    0 var(--edge) 0 var(--pill-wall),
+    0 0 12px var(--panel-glow-dim),
+    0 calc(var(--edge) + 3px) 10px var(--shadow-soft);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(13px, min(3vh, 1.9vw), 26px);
+  line-height: 1.1;
+  letter-spacing: .3px;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: box-shadow .18s ease, border-color .18s ease, filter .18s ease, background .25s ease, color .25s ease;
+}
+.chip { cursor: grab; touch-action: none; }
+.choice {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4em;
+  padding-inline: 1.3em;
+  font-size: clamp(14px, min(3.1vh, 2.1vw), 27px);
+}
+.chip:hover, .choice:hover { filter: brightness(1.12); }
+.chip:focus-visible, .choice:focus-visible { outline: none; border-color: var(--lime); }
+.chip.is-lifted {
+  cursor: grabbing;
+  z-index: 5;
+  box-shadow: 0 var(--edge) 0 var(--pill-wall), 0 16px 28px var(--shadow-deep);
+}
+.chip.is-picked {
+  border-color: var(--lime);
+  box-shadow:
+    0 var(--edge) 0 var(--pill-wall),
+    0 0 0 4px color-mix(in srgb, var(--lime) 40%, transparent),
+    0 calc(var(--edge) + 3px) 10px var(--shadow-soft);
+}
+.chip.is-docked { visibility: hidden; pointer-events: none; }
+
+.choice.is-right {
+  border-color: var(--right-border);
+  color: var(--right-fill);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--right-border) 40%, var(--space-1)) 0%, var(--space-1) 100%);
+  box-shadow: 0 var(--edge) 0 var(--right-border), 0 0 16px color-mix(in srgb, var(--right-fill) 45%, transparent), 0 calc(var(--edge) + 3px) 10px var(--shadow-soft);
+}
+.choice.is-wrong {
+  border-color: var(--wrong-border);
+  color: var(--wrong-fill);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wrong-border) 40%, var(--space-1)) 0%, var(--space-1) 100%);
+  box-shadow: 0 var(--edge) 0 var(--wrong-border), 0 0 16px color-mix(in srgb, var(--wrong-fill) 40%, transparent), 0 calc(var(--edge) + 3px) 10px var(--shadow-soft);
+}
+.choice.is-done { cursor: default; pointer-events: none; }
+.choice.is-struck { opacity: .45; pointer-events: none; cursor: default; }
+
+/* ---- A fraction stood up (mathtext.js) ---------------------------------- */
+.frac {
+  display: inline-flex; flex-direction: column; justify-content: center; align-items: stretch;
+  vertical-align: middle; height: .9em; margin: 0 .1em 0 .04em;
+  font-weight: 800; line-height: 1; letter-spacing: 0; text-align: center; white-space: nowrap;
+}
+.frac__n, .frac__d { display: block; padding: 0 .14em; font-size: .7em; }
+.frac__n { padding-bottom: .08em; }
+.frac__d { padding-top: .1em; border-top: .12em solid currentColor; }
+
+/* ==========================================================================
+   Continue, and the end's two buttons
+   ========================================================================== */
+.next-btn {
+  --edge: 5px;
+  --sink: 0px;
+  position: absolute;
+  right: clamp(14px, 2.6%, 40px);
+  bottom: clamp(12px, 2.4%, 34px);
+  z-index: var(--z-next);
+  display: grid;
+  place-items: center;
+  width: clamp(56px, calc(var(--board-w) * .074), 116px);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 4px solid var(--round-rim);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--white) 38%, transparent) 0%, transparent 44%),
+    linear-gradient(180deg, var(--round-face-1) 0%, var(--round-face-2) 52%, var(--round-face-3) 100%);
+  box-shadow:
+    0 var(--edge) 0 var(--horizon-deep),
+    0 0 16px 2px color-mix(in srgb, var(--lime) 45%, transparent),
+    0 calc(var(--edge) + 5px) 18px var(--shadow-deep);
+  color: var(--white);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  opacity: 0;
+  transition: filter .18s ease;
+}
+.next-btn[hidden] { display: none; }
+.next-btn:hover, .next-btn:focus-visible { filter: brightness(1.06); outline: none; }
+.next-btn:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+/* A white arrow on the deeper green, lifted by a dark-green shadow so it
+   reads at every size. */
+.next-btn__arrow {
+  width: 70%;
+  height: 70%;
+  display: block;
+  filter: drop-shadow(0 3px 0 var(--round-ink-shadow));
+}
+
+.end-actions {
+  position: absolute;
+  right: clamp(14px, 2.6%, 40px);
+  bottom: clamp(12px, 2.4%, 34px);
+  z-index: var(--z-next);
+  display: flex;
+  gap: clamp(8px, 1.2vw, 16px);
+}
+.end-actions[hidden] { display: none; }
+.end-btn {
+  --edge: 4px;
+  --sink: 0px;
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  padding: .36em 1.1em .4em .9em;
+  border: 3px solid var(--pill-border);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pill-face-mid) 0%, var(--pill-face-low) 100%);
+  box-shadow: 0 var(--edge) 0 var(--pill-wall), 0 0 12px var(--panel-glow-dim), 0 calc(var(--edge) + 3px) 10px var(--shadow-soft);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(14px, 2.7vh, 26px);
+  color: var(--ink);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  opacity: 0;
+}
+.end-btn svg { width: 1.2em; height: 1.2em; display: block; }
+.end-btn--primary {
+  --horizon: var(--lime-deep);
+  border-color: var(--lime-soft);
+  color: var(--next-text);
+  background: linear-gradient(180deg, var(--next-face-1) 0%, var(--next-face-2) 55%, var(--next-face-3) 100%);
+  box-shadow: 0 var(--edge) 0 var(--horizon), 0 0 16px 2px color-mix(in srgb, var(--lime) 45%, transparent), 0 calc(var(--edge) + 5px) 18px var(--shadow-deep);
+}
+/* Replay, alone on the last screen: the size of a primary call to action. */
+.end-btn--primary { font-size: clamp(18px, 3.6vh, 34px); padding: .42em 1.2em .46em 1em; }
+.end-btn:hover { filter: brightness(1.08); }
+.end-btn:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+
+/* ==========================================================================
+   The mascot and its slots
+   ========================================================================== */
+.slot { position: absolute; pointer-events: none; }
+.slot--hero {
+  z-index: var(--z-hero);
+  left: 37%;
+  /* Stands the bird's feet on the moon's ground line in the page art.
+     That art covers the whole window (body, center / cover) while the
+     frame is a centred 16:9 box, so the ground sits at a different height
+     in the frame for every window shape -- worked out here from:
+       --art-ratio   the art's height / width (bg.png is 1672 x 941)
+       --ground-y    the ground line, as a fraction of the art's height
+       --foot-pad    the sprite's clear space under its feet, x frame height
+     The ground is held inside the window, for a very wide one that crops it. */
+  --art-ratio: .5628;
+  --ground-y: .923;
+  --foot-pad: .059;
+  --frame-h: calc(var(--board-w) * 9 / 16);
+  bottom: calc(
+    50dvh + var(--frame-h) / 2
+    - min(50dvh + (var(--ground-y) - .5) * max(100vw * var(--art-ratio), 100dvh), 97dvh)
+    - var(--frame-h) * var(--foot-pad)
+  );
+  height: 44%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.mascot {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+.mascot[hidden] { display: none; }
+.mascot.is-away { opacity: 0; }
+
+/* ---- The speech bubble: the theme's message box --------------------------
+   A dark panel, a cyan rim, white words -- placed by its tail's tip on the
+   bird's head, as every bubble in the circle game is. Everything in it is
+   in em, so one font-size scales it all. */
+.bubble {
+  --bub-u: 1em;
+  --bub-corner: calc(var(--bub-u) * .62);
+  --bub-tail-w: calc(var(--bub-u) * .76);
+  --bub-tail-x: calc(var(--bub-u) * .78);
+  --note-edge: var(--bubble-rim);
+  --bub-tip-x: 66%;
+  --bub-tip-y: 86%;   /* the tail's tip, just clear of the helmet's rim */
+
+  position: absolute;
+  left: calc(var(--bub-tip-x) - 4px - .815em);
+  bottom: calc(var(--bub-tip-y) + .725em - 8px);
+  width: max-content;
+  max-width: min(1200px, calc(100vw - 24px));
+  padding: .5em .95em .56em;
+  border: 4px solid var(--note-edge);
+  border-radius: var(--bub-corner);
+  background: linear-gradient(180deg, var(--panel-lit) 0%, var(--bubble-bg) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent),
+    0 0 16px 2px var(--bubble-glow),
+    0 0 40px 10px var(--bubble-glow-dim),
+    0 10px 26px var(--shadow-deep);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(14px, calc(var(--board-w) * .0262), 48px);
+  line-height: 1.22;
+  letter-spacing: .2px;
+  text-align: left;
+  color: var(--bubble-ink);
+  pointer-events: none;
+}
+.bubble[hidden] { display: none; }
+/* A long line in the centre-stage bubble (the last screen): wrapped into a
+   block beside the bird instead of one line across the frame. */
+.bubble.bubble--wrap { max-width: 18em; }
+.bubble.bubble--wrap .type,
+.bubble.bubble--wrap .type-ghost { white-space: pre-wrap; text-wrap: balance; }
+.bubble .type-wrap { display: inline-block; vertical-align: top; }
+.bubble-tail {
+  position: absolute;
+  left: var(--bub-tail-x);
+  top: calc(100% - 4px);
+  width: var(--bub-tail-w);
+  height: auto;
+  overflow: visible;
+}
+
+/* ---- The bird beside the figure (pages.js: the perch) ----------------------
+   The board split 50 / 50: the figure stands in the left half, and the right
+   half is this pane, laid out as the circle game's formula pane. A size
+   container, so the bird, its bubble and the row under it are measured
+   against THIS half (cqw / cqh) and hold at every board size. */
+.layer > .perch {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  container-type: size;
+  pointer-events: none;
+  --perch-bird-left: -2cqw;
+  --perch-bird-size: var(--bird-beside);
+  --perch-reach: 97cqw;
+}
+.perch__stand {
+  position: absolute;
+  left: var(--perch-bird-left);
+  bottom: 33cqh;
+  height: var(--perch-bird-size);
+  aspect-ratio: 1;
+}
+/* The summary: nothing under the bird, so it perches lower and its long
+   closing line clears the title plate. */
+.board.is-ending .perch__stand { bottom: 22cqh; }
+/* The row under the bird: the answers, or the working. */
+.perch__answers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 15cqh;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1.6cqw, 14px);
+  padding: 0 1.5cqw;
+  pointer-events: none;
+}
+.perch__answers .choice {
+  pointer-events: auto;
+  font-size: clamp(12px, 3.8cqw, 26px);
+  padding: .36em .95em .42em;
+}
+.perch__answers .choice.is-done { pointer-events: none; }
+.perch__answers.is-hearing .choice { pointer-events: none; }
+.perch__answers.is-working {
+  top: 65cqh;
+  bottom: auto;
+  align-items: flex-start;
+  pointer-events: none;
+}
+.perch__answers > .card { position: relative; }
+
+/* The bubble over the bird's head, on the perch: the same box, placed by
+   its tail off the pane's units, and tinted by a verdict -- green for a
+   right answer, amber for a wrong one. */
+@property --perch-rim   { syntax: '<color>'; inherits: true; initial-value: #3FE3FF; }
+@property --perch-glow  { syntax: '<color>'; inherits: true; initial-value: #3FE3FF60; }
+.bubble.bubble--perch {
+  --perch-rim: var(--cyan);
+  --perch-glow: var(--bubble-glow);
+  --perch-border: 4px;
+  --perch-tail-left: 1.1em;
+  --perch-tail-w: 1.2em;
+  --note-edge: var(--perch-rim);
+  --perch-tip-x: .66;
+  --perch-set-back: calc(var(--perch-border) + var(--perch-tail-left) + var(--perch-tail-w) * 2 / 44);
+  --bub-tip-x: calc(var(--perch-tip-x) * 100%);
+  --bub-tip-y: 79%;
+  left: calc(var(--bub-tip-x) - var(--perch-set-back));
+  bottom: calc(var(--bub-tip-y) + var(--perch-tail-w) * 34 / 44);
+  max-width: calc(var(--perch-reach) - var(--perch-bird-left)
+                  - var(--perch-tip-x) * var(--perch-bird-size) + var(--perch-set-back));
+  border-color: var(--perch-rim);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--perch-rim) 18%, transparent),
+    0 0 16px 2px var(--perch-glow),
+    0 0 40px 10px color-mix(in srgb, var(--perch-rim) 12%, transparent),
+    0 10px 26px var(--shadow-deep);
+  font-size: var(--bubble-beside-fs);
+  line-height: 1.3;
+  transition: color .35s ease, border-color .35s ease, --perch-rim .35s ease, --perch-glow .35s ease;
+}
+.bubble--perch .bubble-tail {
+  left: var(--perch-tail-left);
+  top: calc(100% + var(--perch-border) - var(--perch-tail-w) * 8 / 44);
+  width: var(--perch-tail-w);
+}
+.bubble--perch .bubble-tail path:last-child { stroke-width: 2.36; vector-effect: none; }
+.bubble.bubble--perch .type,
+.bubble.bubble--perch .type-ghost { white-space: pre-wrap; text-align: left; }
+.bubble--perch .type-wrap,
+.bubble.bubble--perch .type { text-wrap: pretty; }
+.bubble--perch.is-yes {
+  --perch-rim: var(--right-border);
+  --perch-glow: color-mix(in srgb, var(--right-fill) 45%, transparent);
+  color: var(--right-fill);
+}
+.bubble--perch.is-no {
+  --perch-rim: var(--wrong-border);
+  --perch-glow: color-mix(in srgb, var(--wrong-fill) 45%, transparent);
+  color: var(--wrong-fill);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble--perch { transition: none !important; }
+}
+
+/* ==========================================================================
+   Welcome
+   ========================================================================== */
+/* The picture and its layers: css/welcome.css. */
+.welcome {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-welcome);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--space-1) 0%, var(--page-bg) 70%, var(--page-bg-deep) 100%);
+}
+.welcome[hidden] { display: none; }
+
+/* ---- The banner: the theme's title plate ----------------------------------
+   A dark chamfered panel with a cyan rim, white
+   words with the key word in lime. Drawn with clip-path, so the chamfers
+   are the panel's own. */
+.banner {
+  --chamfer: .7em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .6em;
+  margin: 0;
+  padding: .28em 1.3em .34em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(22px, 5.4vh, 58px);
+  line-height: 1.15;
+  letter-spacing: .5px;
+  color: var(--ink);
+  text-shadow: 0 2px 0 var(--shadow-deep);
+  background: linear-gradient(180deg, var(--panel-lit) 0%, var(--bubble-bg) 100%);
+  clip-path: polygon(var(--chamfer) 0, calc(100% - var(--chamfer)) 0, 100% 50%,
+                     calc(100% - var(--chamfer)) 100%, var(--chamfer) 100%, 0 50%);
+  filter: drop-shadow(0 0 10px var(--panel-glow)) drop-shadow(0 8px 18px var(--shadow-deep));
+}
+/* the rim, as an inner outline the chamfers follow */
+.banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--cyan);
+  clip-path: polygon(var(--chamfer) 0, calc(100% - var(--chamfer)) 0, 100% 50%,
+                     calc(100% - var(--chamfer)) 100%, var(--chamfer) 100%, 0 50%,
+                     var(--chamfer) 0,
+                     calc(var(--chamfer) + 3px) 3px, 3px 50%, calc(var(--chamfer) + 3px) calc(100% - 3px),
+                     calc(100% - var(--chamfer) - 3px) calc(100% - 3px), calc(100% - 3px) 50%,
+                     calc(100% - var(--chamfer) - 3px) 3px, calc(var(--chamfer) + 3px) 3px);
+  pointer-events: none;
+}
+.banner__text { display: inline-flex; gap: .3em; white-space: nowrap; }
+.banner__hi { color: var(--lime); }
+.banner--title { font-size: clamp(26px, 7vh, 72px); }
+.banner--small { font-size: clamp(16px, 3.1vh, 32px); --chamfer: .6em; }
+
+/* ---- the loading line, where Start will stand ---------------------------- */
+.loader {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: center;
+  justify-self: center;
+  position: relative;
+  width: clamp(240px, 32vw, 440px);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(30px, 5vh, 40px);
+  color: var(--white);
+  padding: clamp(8px, 1.8vh, 18px) 0;
+  border: 4px solid transparent;
+  animation: loader-in .4s cubic-bezier(.2, .8, .3, 1) backwards;
+  transition: opacity .26s cubic-bezier(.5, 0, .75, 0), transform .26s cubic-bezier(.5, 0, .75, 0);
+}
+.loader::before { content: "\200b"; }
+.loader[hidden] { display: none; }
+.loader.is-done { opacity: 0; transform: translateY(-6px); }
+.loader__body {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(6px, 1.2vh, 10px);
+}
+.loader__text {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0 2px; font-size: .5em; letter-spacing: .6px; white-space: nowrap;
+  text-shadow: 0 2px 0 var(--space-0), 0 0 10px var(--panel-glow);
+}
+.loader__pct { font-variant-numeric: tabular-nums; }
+.loader__line {
+  position: relative; overflow: hidden;
+  height: clamp(6px, 1.1vh, 9px);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cyan) 22%, transparent);
+  box-shadow: inset 0 1px 2px var(--shadow-deep), 0 0 0 1px color-mix(in srgb, var(--cyan) 40%, transparent);
+}
+.loader__fill {
+  position: absolute; inset: 0; border-radius: inherit;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, var(--cyan) 0%, var(--lime) 100%);
+  transition: transform .3s cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes loader-in {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.start-btn {
+  grid-row: 2;
+  --edge: 5px;
+  --sink: 0px;
+  --glow-board-soft: color-mix(in srgb, var(--lime) 50%, transparent);
+  --glow-board-dim: color-mix(in srgb, var(--lime) 24%, transparent);
+  translate: 0 var(--sink);
+  align-self: center;
+  justify-self: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(30px, 5.4vh, 44px);
+  line-height: 1.14;
+  letter-spacing: 1.5px;
+  color: var(--next-text);
+  padding: clamp(8px, 1.8vh, 18px) clamp(34px, 5.6vw, 64px);
+  border: 4px solid var(--lime-soft);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--next-face-1) 0%, var(--next-face-2) 50%, var(--next-face-3) 100%);
+  box-shadow:
+    0 var(--edge) 0 var(--horizon),
+    0 0 14px 2px var(--glow-board-soft),
+    0 0 36px 12px var(--glow-board-dim),
+    0 calc(var(--edge) + 1px) 2px var(--shadow-soft),
+    0 calc(var(--edge) + 5px) calc(var(--edge) * 2 + 16px) var(--shadow-deep);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(16px) scale(.9);
+  transition: opacity .42s ease, transform .42s cubic-bezier(.2, .9, .3, 1.4), box-shadow .18s ease, filter .18s ease;
+}
+.start-btn[hidden] { display: none; }
+.start-btn.in { opacity: 1; transform: none; animation: start-pulse 2.1s ease-in-out .5s infinite; }
+.start-btn.in:hover, .start-btn.in:focus-visible { animation-play-state: paused; filter: brightness(1.06); outline: none; }
+.start-btn.is-3d { transition: opacity .42s ease, transform .42s cubic-bezier(.2, .9, .3, 1.4), filter .18s ease; }

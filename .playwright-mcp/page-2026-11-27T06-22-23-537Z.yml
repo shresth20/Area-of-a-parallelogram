@@ -1,0 +1,12 @@
+- main [ref=f4e2]:
+  - generic [ref=f4e18]:
+    - paragraph [ref=f4e21]:
+      - generic [ref=f4e22]: Tap the parallelogram.
+    - generic [ref=f4e25]:
+      - img "The figure on the board" [ref=f4e26]:
+        - generic [ref=f4e27]:
+          - button "A shape. Tap it if it is the parallelogram." [ref=f4e28] [cursor=pointer]
+          - button "A shape. Tap it if it is the parallelogram." [ref=f4e38] [cursor=pointer]
+          - button "A shape. Tap it if it is the parallelogram." [ref=f4e48] [cursor=pointer]
+          - button "A shape. Tap it if it is the parallelogram." [ref=f4e60] [cursor=pointer]
+      - generic "The working"

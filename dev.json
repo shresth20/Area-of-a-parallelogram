@@ -1,0 +1,14 @@
+[
+    {
+        "waitFor": "#startBtn"
+    },
+    {
+        "wait": 800
+    },
+    {
+        "eval": "!!document.querySelector(\".devnav\")"
+    },
+    {
+        "shot": "dev-on.png"
+    }
+]

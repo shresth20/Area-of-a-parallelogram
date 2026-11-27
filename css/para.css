@@ -1,0 +1,682 @@
+/* ==========================================================================
+   The figure: the parallelogram, its sides, heights, labels and tap targets
+   -- and the DOM cards, keypad, equation and dropdown laid over the stage.
+   Everything rests invisible; the beats reveal it.
+   ========================================================================== */
+
+/* ---- The shape (js/para.js builds it) ------------------------------------- */
+.pg__fill {
+  fill: var(--pg-fill);
+  fill-opacity: .82;
+  opacity: 0;
+  transition: fill .5s ease;
+}
+.pg__fill.is-orange { fill: var(--pg-orange); }
+.pg__fill.is-lit { fill: var(--pg-fill-lit); }
+.pg__fill.is-faint { fill-opacity: .35; }
+.pg__fill.is-garden { fill: var(--pg-green); fill-opacity: .9; }
+.pg__garden-dots { fill: url(#gardenDots); opacity: 0; pointer-events: none; }
+.pg__plant { opacity: 0; pointer-events: none; }
+.pg__plant path { fill: none; stroke: var(--pg-green-deep); stroke-width: 3; stroke-linecap: round; }
+.pg__plant circle { fill: var(--lime-soft); }
+
+.pg__outline {
+  fill: none;
+  stroke: var(--pg-edge);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.pg__side {
+  fill: none;
+  stroke: var(--c, var(--pg-edge));
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: stroke .4s ease, opacity .3s ease;
+}
+.pg__side.is-base   { --c: var(--pg-teal); }
+.pg__side.is-slant  { --c: var(--pg-purple); }
+.pg__side.is-amber  { --c: var(--wrong-fill); }
+.pg__side.is-blue   { --c: var(--cyan-soft); }
+.pg__side.is-orange { --c: var(--pg-orange); }
+.pg__side.is-grey   { --c: var(--pg-grey); }
+.pg__side.is-dim    { opacity: .3; }
+.pg__side.is-lit    { filter: url(#partGlow); }
+
+.pg__tip {
+  fill: var(--lime);
+  stroke: var(--white);
+  stroke-width: 2.4;
+  opacity: 0;
+}
+
+/* The tap target over a side or a line: a wide, unpainted stroke. Live only
+   while its group says so. */
+.pg__hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 30;
+  stroke-linecap: round;
+  cursor: pointer;
+  outline: none;
+  pointer-events: none;
+}
+.is-live .pg__hit { pointer-events: stroke; }
+.is-live .pg__hit.is-done { pointer-events: none; cursor: default; }
+.pg__hit:focus-visible { stroke: color-mix(in srgb, var(--lime) 30%, transparent); }
+
+/* The height: orange, dashed, with a dot at its foot and the right-angle
+   marker there. A solid one is the learner's own line. */
+.pg__height {
+  fill: none;
+  stroke: var(--c, var(--pg-orange));
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 10 8;
+  opacity: 0;
+  transition: stroke .4s ease, opacity .3s ease;
+}
+.pg__height.is-solid { stroke-dasharray: none; }
+.pg__height.is-grey  { --c: var(--pg-grey); }
+.pg__height.is-amber { --c: var(--wrong-fill); }
+.pg__height.is-lime  { --c: var(--lime); }
+.pg__height.is-dotted { stroke-dasharray: 2 9; }
+.pg__height.is-dim { opacity: .3; }
+.pg__height.is-lit { filter: url(#partGlow); }
+/* The learner's own line, following the finger. */
+.pg__draw {
+  fill: none;
+  stroke: var(--pg-orange);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0;
+  pointer-events: none;
+}
+.pg__ra {
+  fill: none;
+  stroke: var(--c, var(--white));
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: stroke .3s ease;
+}
+.pg__ra.is-orange { --c: var(--pg-orange); }
+.pg__ra.is-lime { --c: var(--lime); }
+.pg__ra.is-dim { opacity: .3; }
+/* The base extended, dotted, in the base's ink. */
+.pg__ext {
+  fill: none;
+  stroke: var(--pg-teal);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 2 9;
+  opacity: 0;
+}
+/* A diagonal: grey, dash-dot. */
+.pg__diag {
+  fill: none;
+  stroke: var(--pg-grey);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 14 7 3 7;
+  opacity: 0;
+  transition: stroke .3s ease, opacity .3s ease;
+}
+.pg__diag.is-amber { stroke: var(--wrong-fill); }
+.pg__diag.is-dim { opacity: .3; }
+
+/* A glowing point: a halo breathing under a bright core. */
+.pg__dot { opacity: 0; }
+.pg__dot-halo {
+  fill: color-mix(in srgb, var(--lime) 55%, transparent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.pg__dot-core {
+  fill: var(--lime);
+  stroke: var(--white);
+  stroke-width: 2.4;
+}
+.pg__dot.is-orange .pg__dot-core { fill: var(--pg-orange); }
+.pg__dot.is-orange .pg__dot-halo { fill: color-mix(in srgb, var(--pg-orange) 55%, transparent); }
+.pg__dot-hit { fill: transparent; cursor: pointer; outline: none; pointer-events: none; }
+.is-live .pg__dot-hit { pointer-events: all; }
+.pg__dot-hit:focus-visible { stroke: var(--lime); stroke-width: 3; stroke-dasharray: 4 4; }
+
+/* Every word on the figure: a side's length, a letter, a name. */
+.pg__label {
+  fill: var(--c, var(--ink));
+  font-size: 26px;
+  opacity: 0;
+  transition: fill .3s ease;
+}
+.pg__label.is-italic { font-style: italic; }
+.pg__label.is-teal   { --c: var(--pg-teal); }
+.pg__label.is-orange { --c: var(--pg-orange); }
+.pg__label.is-purple { --c: var(--pg-purple); }
+.pg__label.is-grey   { --c: var(--pg-grey); }
+.pg__label.is-lime   { --c: var(--lime); }
+.pg__label.is-amber  { --c: var(--wrong-fill); }
+.pg__label.is-small  { font-size: 22px; }
+.pg__label.is-big    { font-size: 30px; }
+.pg__label.is-dim    { opacity: .35; }
+.pg__label.is-lit    { filter: drop-shadow(0 0 6px currentColor); }
+
+/* The base's bracket under the shape, as the theme draws it, in the base's ink. */
+.pg__bracket {
+  fill: none;
+  stroke: var(--c, var(--pg-teal));
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+/* Parallel markers: one or two chevrons on the middle of a side. */
+.pg__arrow {
+  fill: none;
+  stroke: var(--c, var(--white));
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.pg__arrow.is-blue { --c: var(--cyan-soft); }
+.pg__arrow.is-orange { --c: var(--pg-orange); }
+
+/* A name chip on the figure, as a tap target: a pill with a word. */
+.pg__chip { opacity: 0; outline: none; cursor: default; pointer-events: none; }
+.is-live .pg__chip { pointer-events: all; cursor: pointer; }
+.is-live .pg__chip.is-done { pointer-events: none; cursor: default; }
+.pg__chip-rect {
+  fill: var(--space-1);
+  stroke: var(--cyan);
+  stroke-width: 2.6;
+  transition: fill .25s ease, stroke .25s ease;
+}
+.pg__chip:hover .pg__chip-rect { fill: var(--space-2); }
+.pg__chip:focus-visible .pg__chip-rect { stroke: var(--lime); stroke-width: 3.4; }
+.pg__chip-text { fill: var(--ink); font-size: 22px; stroke: none; transition: fill .25s ease; }
+.pg__chip.is-right .pg__chip-rect { fill: color-mix(in srgb, var(--right-border) 35%, var(--space-1)); stroke: var(--right-border); }
+.pg__chip.is-right .pg__chip-text { fill: var(--right-fill); }
+.pg__chip.is-wrong .pg__chip-rect { fill: color-mix(in srgb, var(--wrong-border) 35%, var(--space-1)); stroke: var(--wrong-border); }
+.pg__chip.is-wrong .pg__chip-text { fill: var(--wrong-fill); }
+.pg__chip-tick { fill: none; stroke: var(--right-fill); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.pg__chip.is-right .pg__chip-tick { opacity: 1; }
+
+/* A number tag on a line (1, 2, 3). */
+.pg__tag-ring { fill: var(--space-1); stroke: var(--cyan); stroke-width: 2.4; }
+.pg__tag-text { fill: var(--ink); font-size: 20px; stroke: none; }
+.pg__tag { opacity: 0; pointer-events: none; }
+
+/* The cut triangle, and the dotted space it is dropped into. */
+.pg__tri {
+  fill: var(--pg-orange);
+  fill-opacity: .9;
+  stroke: var(--pg-orange-deep);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: fill .6s ease, stroke .6s ease;
+}
+.pg__tri.is-blue { fill: var(--pg-fill); stroke: var(--pg-edge); }
+.pg__tri.is-quiet { stroke-opacity: .18; }
+/* a line refused: soft amber, as every refused thing is */
+.pg__side.is-wrong, .pg__height.is-wrong, .pg__diag.is-wrong, .pg__bracket.is-wrong { --c: var(--wrong-fill); stroke: var(--wrong-fill); }
+.pg__side.is-right, .pg__height.is-right { --c: var(--right-fill); }
+.pg__tri.is-live { cursor: grab; }
+.pg__tri.is-held { cursor: grabbing; }
+.pg__tri-hit { fill: transparent; stroke: transparent; stroke-width: 24; stroke-linejoin: round; outline: none; pointer-events: none; }
+.is-live .pg__tri-hit { pointer-events: all; cursor: grab; }
+.pg__tri-hit:focus-visible { stroke: color-mix(in srgb, var(--lime) 30%, transparent); }
+.pg__target {
+  fill: color-mix(in srgb, var(--pg-orange) 12%, transparent);
+  stroke: var(--pg-orange);
+  stroke-width: 3;
+  stroke-dasharray: 8 7;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: stroke .2s ease, fill .2s ease, stroke-width .2s ease;
+  cursor: pointer;
+  pointer-events: none;
+}
+.is-live .pg__target { pointer-events: all; }
+.pg__target.is-near { stroke: var(--lime); stroke-width: 4; fill: color-mix(in srgb, var(--lime) 22%, transparent); }
+
+/* The scissors' trace: a bright head running down the cut. */
+.pg__scissor { fill: var(--white); stroke: var(--pg-orange); stroke-width: 2; opacity: 0; }
+.pg__cut {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+  opacity: 0;
+}
+
+/* The faint dotted outline of the original shape, kept for comparison. */
+.pg__ghost {
+  fill: none;
+  stroke: var(--pg-edge);
+  stroke-width: 2.6;
+  stroke-dasharray: 3 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+.pg__ghost-fill { fill: var(--pg-fill); fill-opacity: .2; opacity: 0; }
+
+/* Unit squares over a shape. */
+.pg__grid {
+  fill: none;
+  stroke: color-mix(in srgb, var(--white) 55%, transparent);
+  stroke-width: 1.4;
+  opacity: 0;
+}
+
+/* The dotted connector from a part to the side it matches. */
+.pg__connector {
+  fill: none;
+  stroke: var(--c, var(--pg-teal));
+  stroke-width: 3;
+  stroke-dasharray: 2 8;
+  stroke-linecap: round;
+  opacity: 0;
+}
+.pg__connector.is-orange { --c: var(--pg-orange); }
+
+/* The purple handle on the top edge, dragged sideways. */
+.pg__handle { opacity: 0; outline: none; cursor: grab; pointer-events: none; }
+.is-live .pg__handle { pointer-events: all; }
+.pg__handle.is-held { cursor: grabbing; }
+.pg__handle-halo { fill: color-mix(in srgb, var(--pg-purple) 50%, transparent); opacity: 0; transform-box: fill-box; transform-origin: center; }
+.pg__handle-core { fill: var(--pg-purple); stroke: var(--white); stroke-width: 2.6; }
+.pg__handle-arrows { fill: none; stroke: var(--white); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.pg__handle:focus-visible .pg__handle-core { stroke: var(--lime); stroke-width: 3.4; }
+
+/* The set square that slides along the base. */
+.pg__setsquare { fill: color-mix(in srgb, var(--lime) 30%, transparent); stroke: var(--lime); stroke-width: 2.6; stroke-linejoin: round; opacity: 0; }
+
+/* The warm-up's four cards: a dark tile each, the shape inside. */
+.shape-card { opacity: 0; outline: none; cursor: default; pointer-events: none; }
+.is-live .shape-card { pointer-events: all; cursor: pointer; }
+.is-live .shape-card.is-done { pointer-events: none; cursor: default; }
+/* The wall under each card's face, with a soft shadow on the sky below it:
+   the depth that says "tap me". Coloured with the card's state. */
+.shape-card__wall {
+  fill: color-mix(in srgb, var(--cyan-deep) 45%, var(--space-0));
+  stroke: color-mix(in srgb, var(--cyan) 55%, transparent);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 8px 10px var(--shadow-deep));
+  transition: fill .25s ease, stroke .25s ease;
+}
+.shape-card.is-wrong .shape-card__wall { fill: color-mix(in srgb, var(--wrong-border) 55%, var(--space-0)); stroke: var(--wrong-border); }
+.shape-card.is-right .shape-card__wall { fill: color-mix(in srgb, var(--pg-teal-deep) 60%, var(--space-0)); stroke: var(--pg-teal); }
+.shape-card__bg {
+  fill: var(--space-1);
+  stroke: color-mix(in srgb, var(--cyan) 55%, transparent);
+  stroke-width: 2.4;
+  transition: fill .25s ease, stroke .25s ease, stroke-width .25s ease;
+}
+.shape-card:hover .shape-card__bg { fill: var(--space-2); }
+.shape-card:focus-visible .shape-card__bg { stroke: var(--lime); stroke-width: 3.4; }
+.shape-card.is-wrong .shape-card__bg { stroke: var(--wrong-border); stroke-width: 3.4; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--wrong-fill) 70%, transparent)); }
+.shape-card.is-right .shape-card__bg { stroke: var(--pg-teal); stroke-width: 3.6; fill: color-mix(in srgb, var(--pg-teal) 16%, var(--space-1)); }
+.shape-card__tick { fill: none; stroke: var(--pg-teal); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.shape-card__ring { fill: var(--space-1); stroke: var(--pg-teal); stroke-width: 3; opacity: 0; }
+.shape-card .pg__side { stroke-width: 3.6; }
+/* the pairs of opposite sides, lit for the hint */
+.shape-card .pg__side.is-pair-a { --c: var(--cyan-soft); filter: url(#partGlow); }
+.shape-card .pg__side.is-pair-b { --c: var(--pg-orange); filter: url(#partGlow); }
+
+/* ---- The pointing hand ------------------------------------------------- */
+.hand-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  overflow: visible;
+}
+.hand-layer .hand {
+  fill: var(--white);
+  stroke: var(--space-0);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 3px 5px var(--shadow-deep));
+}
+.hand-layer .hand__ring {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 3;
+  opacity: 0;
+}
+.drag-guide {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+}
+.drag-guide__card {
+  position: absolute;
+  border: 3px dashed var(--cyan);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--space-1) 70%, transparent);
+}
+.drag-guide__hand {
+  position: absolute;
+  left: -8px;
+  top: -4px;
+  width: 44px;
+  height: 52px;
+  overflow: visible;
+}
+.drag-guide__hand path {
+  fill: var(--white);
+  stroke: var(--space-0);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* ==========================================================================
+   The DOM layer: cards, captions, the keypad, the equation and its dropdown
+   ========================================================================== */
+.card {
+  position: absolute;
+  max-width: 72%;
+  padding: clamp(8px, 1.6vh, 16px) clamp(14px, 2vw, 26px);
+  border-radius: clamp(10px, 1.8vh, 18px);
+  border: 3px solid var(--panel-rim);
+  background: linear-gradient(180deg, var(--panel-lit) 0%, var(--panel) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent),
+    0 0 14px 1px var(--panel-glow-dim),
+    0 10px 24px var(--shadow-deep);
+  color: var(--ink);
+  opacity: 0;
+}
+/* The formula card: the theme's lime plate. */
+.card--formula {
+  border-color: var(--lime);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lime-deep) 22%, var(--space-1)) 0%, color-mix(in srgb, var(--lime-deep) 10%, var(--space-0)) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--lime) 22%, transparent),
+    0 0 18px 2px color-mix(in srgb, var(--lime) 35%, transparent),
+    0 10px 24px var(--shadow-deep);
+}
+.card--formula .card__row { color: var(--lime); }
+.card__title {
+  margin: 0 0 .2em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(14px, 2.6vh, 26px);
+  letter-spacing: .4px;
+  color: var(--cyan-soft);
+}
+.card__row {
+  display: block;
+  margin: .12em 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(17px, 3.3vh, 34px);
+  letter-spacing: .4px;
+  line-height: 1.15;
+  white-space: normal;
+  text-align: center;
+}
+.card__row sup { font-size: .6em; line-height: 0; vertical-align: super; }
+.card__row.is-result { color: var(--lime); }
+.card__row.is-soft { color: var(--ink-soft); font-weight: 700; font-size: clamp(13px, 2.4vh, 24px); }
+/* The recap's formula card (screen 9): the formula large, the rule under it. */
+.card--recap { padding-inline: 1.4em; }
+.card__row.is-big { font-size: clamp(28px, 6vh, 60px); line-height: 1.1; }
+.card__row.is-note { font-family: var(--font-body); font-weight: 600; font-size: clamp(12px, 2.1vh, 20px); color: var(--ink-soft); white-space: normal; line-height: 1.3; }
+.card__row .k-teal { color: var(--pg-teal); }
+.card__row .k-orange { color: var(--pg-orange); }
+.card__row .k-lime { color: var(--lime); }
+.card__row .k-purple { color: var(--pg-purple); }
+.card.is-lit { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lime) 30%, transparent), 0 0 26px 4px color-mix(in srgb, var(--lime) 55%, transparent), 0 10px 24px var(--shadow-deep); border-color: var(--lime); }
+.card--calc .card__row { font-size: clamp(16px, 3vh, 30px); }
+
+/* A caption: a short chip on the figure ("Triangle separated!"). */
+.caption {
+  position: absolute;
+  padding: .25em .9em .3em;
+  border-radius: 999px;
+  border: 2.5px solid var(--cyan);
+  background: var(--panel);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(13px, 2.4vh, 24px);
+  color: var(--ink);
+  white-space: nowrap;
+  box-shadow: 0 0 12px var(--panel-glow-dim), 0 6px 14px var(--shadow-deep);
+  opacity: 0;
+}
+.caption.is-lime { border-color: var(--lime); color: var(--lime); }
+.caption.is-teal { border-color: var(--pg-teal); color: var(--pg-teal); }
+.caption.is-orange { border-color: var(--pg-orange); color: var(--pg-orange); }
+
+/* The small pill buttons on the stage (Reset). */
+.pill-btn {
+  --edge: 3px;
+  --sink: 0px;
+  position: absolute;
+  appearance: none;
+  padding: .3em 1em .34em;
+  border: 2.5px solid var(--pill-border);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--pill-face-mid) 0%, var(--pill-face-low) 100%);
+  box-shadow: 0 var(--edge) 0 var(--pill-wall), 0 0 10px var(--panel-glow-dim);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(12px, 2.2vh, 22px);
+  color: var(--ink);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  opacity: 0;
+}
+.pill-btn:hover { filter: brightness(1.12); }
+.pill-btn:focus-visible { outline: 3px solid var(--lime); outline-offset: 2px; }
+
+/* ---- The keypad ------------------------------------------------------------
+   In the right half: the answer box with its label and unit, the keys in a
+   grid, and the check button below. */
+.keypad {
+  position: absolute;
+  right: 3%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44%;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  gap: clamp(6px, 1.3vh, 14px);
+  pointer-events: auto;
+  opacity: 0;
+}
+.keypad__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(18px, 3.4vh, 34px);
+  color: var(--ink);
+}
+.keypad__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.2em;
+  height: 1.55em;
+  padding: 0 .4em;
+  border-radius: .35em;
+  border: 3px solid var(--cyan);
+  background: var(--space-0);
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  transition: border-color .25s ease, color .25s ease, box-shadow .25s ease;
+}
+.keypad__box.is-right { border-color: var(--right-border); color: var(--right-fill); box-shadow: 0 0 16px color-mix(in srgb, var(--right-fill) 50%, transparent); animation: none; }
+.keypad__box.is-wrong { border-color: var(--wrong-border); color: var(--wrong-fill); box-shadow: 0 0 16px color-mix(in srgb, var(--wrong-fill) 45%, transparent); animation: none; }
+.keypad__tick { width: 1em; height: 1em; display: none; }
+.keypad__box.is-right .keypad__tick { display: block; }
+.keypad__unit { color: var(--ink-soft); font-size: .85em; }
+.keypad__unit sup { font-size: .6em; vertical-align: super; }
+.keypad__keys {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(5px, 1vh, 10px);
+}
+.keypad__key {
+  --edge: 3px;
+  --sink: 0px;
+  appearance: none;
+  width: clamp(44px, 7.4vh, 78px);
+  height: clamp(34px, 5.6vh, 58px);
+  border-radius: .5em;
+  border: 2.5px solid var(--cyan);
+  background: linear-gradient(180deg, var(--pill-face-mid) 0%, var(--pill-face-low) 100%);
+  box-shadow: 0 var(--edge) 0 var(--pill-wall), 0 0 8px var(--panel-glow-dim);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(16px, 3vh, 30px);
+  color: var(--ink);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  transition: filter .15s ease, opacity .25s ease;
+}
+.keypad__key:hover { filter: brightness(1.15); }
+.keypad__key:focus-visible { outline: 3px solid var(--lime); outline-offset: 2px; }
+.keypad__key--back { font-size: clamp(14px, 2.6vh, 26px); }
+.keypad.is-hearing .keypad__key,
+.keypad.is-done .keypad__key { pointer-events: none; opacity: .55; }
+.keypad__check {
+  --edge: 4px;
+  --sink: 0px;
+  appearance: none;
+  padding: .35em 1.3em .4em;
+  border: 3px solid var(--lime-soft);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--next-face-1) 0%, var(--next-face-2) 55%, var(--next-face-3) 100%);
+  box-shadow: 0 var(--edge) 0 var(--horizon), 0 0 14px color-mix(in srgb, var(--lime) 40%, transparent);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(15px, 2.8vh, 28px);
+  color: var(--next-text);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  transition: opacity .25s ease, filter .15s ease;
+}
+.keypad__check:hover { filter: brightness(1.06); }
+.keypad__check:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+.keypad__check[disabled] { opacity: .4; cursor: default; pointer-events: none; filter: none; }
+.keypad.is-done .keypad__check { pointer-events: none; opacity: .4; }
+
+/* ---- The equation, built line by line, and the dropdown in its last line -- */
+.eq {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: clamp(4px, .9vh, 10px);
+  padding: clamp(8px, 1.5vh, 16px) clamp(14px, 2vw, 28px);
+  border-radius: clamp(10px, 1.8vh, 18px);
+  border: 3px solid var(--panel-rim);
+  background: linear-gradient(180deg, var(--panel-lit) 0%, var(--panel) 100%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent), 0 0 14px 1px var(--panel-glow-dim), 0 10px 24px var(--shadow-deep);
+  opacity: 0;
+  pointer-events: auto;
+}
+.eq__line {
+  display: flex;
+  align-items: center;
+  gap: .45em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(14px, 2.7vh, 28px);
+  color: var(--ink);
+  white-space: nowrap;
+  opacity: 0;
+  transition: color .3s ease;
+}
+.eq__num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  font-size: .78em;
+  color: var(--cyan-soft);
+}
+.eq__line.is-lit { color: var(--lime); }
+.eq__line .k-teal { color: var(--pg-teal); }
+.eq__line .k-orange { color: var(--pg-orange); }
+.eq__word { display: inline-block; }
+.eq__line.is-done { color: var(--right-fill); }
+
+.dropdown { position: relative; display: inline-block; }
+.dropdown__btn {
+  --edge: 3px;
+  --sink: 0px;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  min-width: 7.5em;
+  padding: .22em .7em .26em .9em;
+  border: 3px solid var(--cyan);
+  border-radius: .45em;
+  background: var(--space-0);
+  font: inherit;
+  color: var(--lime);
+  cursor: pointer;
+  translate: 0 var(--sink);
+  transition: border-color .25s ease, color .25s ease, box-shadow .25s ease;
+}
+.dropdown__btn:focus-visible { outline: 3px solid var(--lime); outline-offset: 2px; }
+.dropdown__btn .chev { margin-left: auto; width: .7em; height: .5em; }
+.dropdown__btn.is-right { border-color: var(--right-border); color: var(--right-fill); box-shadow: 0 0 14px color-mix(in srgb, var(--right-fill) 45%, transparent); animation: none; }
+.dropdown__btn.is-wrong { border-color: var(--wrong-border); color: var(--wrong-fill); box-shadow: 0 0 14px color-mix(in srgb, var(--wrong-fill) 45%, transparent); animation: none; }
+.dropdown.is-done .dropdown__btn { pointer-events: none; }
+.dropdown__list {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 100%;
+  margin: 0;
+  padding: .3em;
+  list-style: none;
+  border: 3px solid var(--cyan);
+  border-radius: .5em;
+  background: var(--space-1);
+  box-shadow: 0 0 16px var(--panel-glow-dim), 0 10px 24px var(--shadow-deep);
+  z-index: 3;
+}
+.dropdown__list[hidden] { display: none; }
+.dropdown__item {
+  padding: .25em .7em;
+  border-radius: .35em;
+  font: inherit;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dropdown__item:hover, .dropdown__item.is-focus { background: var(--space-2); color: var(--lime); }
+.dropdown__item.is-struck { opacity: .4; pointer-events: none; }
+.dropdown__tick { width: .9em; height: .9em; display: none; }
+.dropdown__btn.is-right .dropdown__tick { display: block; }
+
+/* The welcome banner used again on the summary page. */
+.layer .banner { position: absolute; left: 50%; top: 3%; transform: translateX(-50%); opacity: 0; }

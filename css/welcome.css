@@ -1,0 +1,146 @@
+/* ==========================================================================
+   Welcome -- assets/images/welcome.png, as it is, with life laid over it
+   (js/welcome.js). The art box always keeps the picture's own shape
+   (1670 x 941), so every layer placed in % of it lands on the same pixel.
+   ========================================================================== */
+.welcome {
+  --art-welcome: url("../assets/images/welcome.png");
+  --art-ratio: 1.7747;                        /* 1670 / 941 */
+  /* fill the screen; crop the sides at most 12.5% (then letterbox), and
+     crop more off the top than the bottom so the bird keeps its feet */
+  --art-w: max(100vw, min(100dvh * var(--art-ratio), 100vw / .75));
+  --art-h: calc(var(--art-w) / var(--art-ratio));
+}
+
+.welcome__art,
+.welcome__stage {
+  position: absolute;
+  left: 50%;
+  width: var(--art-w);
+  height: var(--art-h);
+  margin-left: calc(var(--art-w) / -2);
+  top: min(calc((100dvh - var(--art-h)) * .67), calc((100dvh - var(--art-h)) * .5));
+}
+.welcome__art { overflow: hidden; }
+.welcome__stage { pointer-events: none; }
+
+.welcome__scene { position: absolute; inset: 0; }
+.welcome__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* The title is in the picture; the heading stays for screen readers. */
+.welcome__title {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Loading line and Start: the same controls, on the picture's open sky,
+   right where the bird is pointing ------------------------------------------ */
+.welcome__cta {
+  position: absolute;
+  left: 50%;
+  top: 71%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+}
+.welcome__cta > .loader,
+.welcome__cta > .start-btn { grid-area: 1 / 1; }
+
+/* Tall screens: the picture is letterboxed over a soft blur of itself, and
+   Start drops below it so it never covers the bird. */
+@media (max-aspect-ratio: 13/10) {
+  .welcome::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--art-welcome) center / cover no-repeat;
+    filter: blur(28px) brightness(.55);
+    transform: scale(1.15);
+  }
+  .welcome__cta { top: calc(100% + min(12vh, 110px)); }
+}
+
+/* ---- the layers (js/welcome.js) ------------------------------------------ */
+.wfx-rig { position: absolute; inset: 0; pointer-events: none; }
+/* a piece of the same picture, lined up on itself; soft-edged */
+.wfx-copy {
+  position: absolute;
+  background-image: var(--art-welcome);
+  background-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(closest-side, #000 88%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 88%, transparent 100%);
+}
+.wfx-copy--marks {
+  -webkit-mask-image: radial-gradient(closest-side, #000 86%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 86%, transparent 100%);
+}
+
+.wfx-shine { position: absolute; inset: 0; pointer-events: none; }
+.wfx-shine__band {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 14%;
+  width: 10%;
+  opacity: 0;
+  background: linear-gradient(105deg,
+    transparent 20%,
+    rgba(255, 255, 255, .10) 38%,
+    rgba(255, 255, 255, .38) 50%,
+    rgba(255, 255, 255, .10) 62%,
+    transparent 80%);
+}
+
+.wfx-spark {
+  position: absolute;
+  aspect-ratio: 1;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(157, 243, 255, .55) 0%, rgba(63, 227, 255, .18) 30%, transparent 62%);
+}
+.wfx-spark svg { display: block; width: 100%; height: 100%; fill: #fff; }
+
+/* movers: 1% x 1% of the art, moved by xPercent / yPercent */
+.wfx-mover {
+  position: absolute;
+  left: 0; top: 0;
+  width: 1%; height: 1%;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+.wfx-orb__dot {
+  position: absolute;
+  left: 0; top: 0;
+  width: 180%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, rgba(220, 255, 255, .95) 14%, rgba(63, 227, 255, .55) 34%, rgba(201, 140, 255, .2) 55%, transparent 72%);
+}
+.wfx-meteor__tail {
+  position: absolute;
+  left: 0; top: 0;
+  width: 900%;
+  aspect-ratio: 40 / 1;
+  transform-origin: 100% 50%;
+  translate: -100% -50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, rgba(157, 243, 255, .35) 60%, #fff 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wfx-spark, .wfx-mover, .wfx-shine__band { display: none; }
+}

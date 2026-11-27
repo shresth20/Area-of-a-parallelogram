@@ -1,0 +1,18 @@
+[     402ms] [LOG] recaptchacompat disabled @ https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off&onload=__antClientAttestationHcaptchaInvisibleReady:4
+[    2471ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[    2471ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[    6983ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[    6983ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[   39565ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[   39565ms] [ERROR] Cross-Origin-Opener-Policy policy would block the window.closed call. @ https://accounts.google.com/gsi/client:138
+[   88099ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1
+[   88417ms] [INFO] [O11Y] [DatadogRUM] Initialized {service: claude-ai, env: production, version: 2b6b185b35} @ https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/shared-l-p-m-w-0-ByVjFSmb.js:26
+[   89199ms] [LOG] recaptchacompat disabled @ https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off&onload=__antClientAttestationHcaptchaInvisibleReady:4
+[   91437ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1
+[   92390ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1
+[   92419ms] [INFO] [O11Y] [DatadogRUM] Initialized {service: claude-ai, env: production, version: 2b6b185b35} @ https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/shared-l-p-m-w-0-ByVjFSmb.js:26
+[   92475ms] [LOG] recaptchacompat disabled @ https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off&onload=__antClientAttestationHcaptchaInvisibleReady:4
+[   92986ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1
+[  107274ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1
+[  107347ms] [INFO] [O11Y] [DatadogRUM] Initialized {service: claude-ai, env: production, version: 2b6b185b35} @ https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/shared-l-p-m-w-0-ByVjFSmb.js:26
+[  108234ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'. @ :1

@@ -1,0 +1,178 @@
+/* ==========================================================================
+   Motion layer. Transform, opacity and filter only (and stroke-width on the
+   figure's lines, which costs no layout in an SVG).
+   ========================================================================== */
+.is-animating { will-change: transform, opacity; }
+.board.is-animating { transition: none; }
+
+/* ---- the text reveal (js/typer.js) ------------------------------------- */
+.type-wrap  { position: relative; display: inline-block; }
+.type-ghost { visibility: hidden; }
+.type { position: absolute; inset: 0; text-align: left; white-space: nowrap; }
+.bubble .type { text-align: left; }
+.wd { opacity: 0; }
+.wd.in { animation: wd-in .46s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes wd-in {
+  from { opacity: 0; filter: blur(4px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+/* ---- Start, breathing ---------------------------------------------------- */
+@keyframes start-pulse {
+  0%, 100% {
+    box-shadow: 0 var(--edge) 0 var(--horizon),
+                0 0 14px 2px var(--glow-board-soft),
+                0 0 36px 12px var(--glow-board-dim),
+                0 calc(var(--edge) + 1px) 2px var(--shadow-soft),
+                0 calc(var(--edge) + 5px) calc(var(--edge) * 2 + 16px) var(--shadow-deep);
+  }
+  50% {
+    box-shadow: 0 var(--edge) 0 var(--horizon),
+                0 0 26px 8px var(--glow-board-soft),
+                0 0 62px 24px var(--glow-board-dim),
+                0 calc(var(--edge) + 1px) 2px var(--shadow-soft),
+                0 calc(var(--edge) + 5px) calc(var(--edge) * 2 + 16px) var(--shadow-deep);
+  }
+}
+
+/* ---- a line breathing while it is named -----------------------------------
+   A CSS loop, because its length is a beat's to decide: --pulse-times is
+   written by Beats.pulseHold / partPulse. Every line swells under a bloom
+   of its own ink. */
+.is-pulsing {
+  filter: url(#partGlow);
+  animation: line-breathe 1.05s ease-in-out var(--pulse-times, 3);
+  --pulse-w0: 4;
+  --pulse-w1: 7.5;
+}
+.pg__height.is-pulsing { --pulse-w0: 4; --pulse-w1: 7; }
+.pg__bracket.is-pulsing { --pulse-w0: 4; --pulse-w1: 6.5; }
+@keyframes line-breathe {
+  0%, 100% { stroke-width: var(--pulse-w0); }
+  50%      { stroke-width: var(--pulse-w1); }
+}
+/* A dot asking to be touched: a halo that breathes under it. */
+.pg__dot.is-calling .pg__dot-halo {
+  animation: dot-glow 1.6s ease-in-out infinite;
+}
+@keyframes dot-glow {
+  0%, 100% { opacity: 0; transform: scale(.7); }
+  50%      { opacity: .9; transform: scale(1.25); }
+}
+/* A right-angle marker pulsing: it brightens and swells, once per beat. */
+.pg__ra.is-pulsing {
+  animation: ra-pulse .8s ease-in-out var(--pulse-times, 2);
+  --pulse-w0: 3; --pulse-w1: 5.5;
+}
+@keyframes ra-pulse {
+  0%, 100% { stroke-width: var(--pulse-w0); opacity: 1; }
+  50%      { stroke-width: var(--pulse-w1); opacity: 1; }
+}
+/* A word breathing: the key term lit once. */
+.is-glowing { animation: text-glow 1.1s ease-in-out var(--pulse-times, 2); }
+@keyframes text-glow {
+  0%, 100% { filter: none; }
+  50%      { filter: drop-shadow(0 0 8px var(--lime)) brightness(1.3); }
+}
+/* A drag handle calling: a soft ring breathing round it. */
+.pg__handle.is-calling .pg__handle-halo { animation: dot-glow 1.6s ease-in-out infinite; }
+
+/* ---- a keypad box waiting for a number ------------------------------------ */
+.keypad__box.is-asking { animation: box-ask 1.4s ease-in-out infinite; }
+@keyframes box-ask {
+  0%, 100% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cyan) 30%, transparent); }
+  50%      { box-shadow: inset 0 0 0 2px var(--cyan), 0 0 14px var(--panel-glow); }
+}
+.dropdown__btn.is-asking { animation: box-ask 1.4s ease-in-out infinite; }
+
+/* ---- the ripple a tap leaves ----------------------------------------------- */
+.mo-ripple {
+  position: fixed;
+  z-index: 50;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  border: 3px solid var(--lime);
+  pointer-events: none;
+}
+
+/* ---- confetti ----------------------------------------------------------- */
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.confetti__bit {
+  position: absolute;
+  left: 0; top: 0;
+  width: 10px; height: 7px;
+  border-radius: 2px;
+  opacity: 0;
+}
+.confetti__bit--round { width: 8px; height: 8px; border-radius: 50%; }
+.confetti__bit--cyan   { background: var(--cyan); }
+.confetti__bit--lime   { background: var(--lime); }
+.confetti__bit--orange { background: var(--pg-orange); }
+.confetti__bit--purple { background: var(--pg-purple); }
+.confetti__bit--teal   { background: var(--pg-teal); }
+.confetti__bit--white  { background: var(--white); }
+.qz-bit--cyan   { fill: var(--cyan); }
+.qz-bit--lime   { fill: var(--lime); }
+.qz-bit--orange { fill: var(--pg-orange); }
+.qz-bit--purple { fill: var(--pg-purple); }
+.qz-bit--teal   { fill: var(--pg-teal); }
+
+/* ---- the bird adrift: low gravity ------------------------------------------
+   An ambient float so the astronaut never reads as pinned to the page, kept
+   well under the threshold of attention: it is there if you look for it and
+   gone if you are reading.
+
+   - Two loops at unrelated periods (8s rise and fall, 10s sway) so the
+     sum never visibly repeats -- a single loop reads as a machine.
+   - Only ever UP from the rest pose: the hero slot stands the bird's feet on
+     the moon's ground line, and a float that dipped below it would sink the
+     boots into the rock. Rest pose = frame 0 of both loops, so a bird that
+     is re-parented (which restarts CSS animations) starts from where it
+     stands, never with a jump.
+   - Sizes in % of the bird itself, so it is a gentle bob centre stage and
+     next to nothing beside the question in the board header, where the
+     learner's eyes are on the text.
+   - The individual `translate` / `rotate` properties, not `transform`: they
+     compose with the transform GSAP writes for the jumps (landOn, springOff,
+     heroOut) instead of fighting it, and both run on the compositor, so a
+     busy main thread cannot make the float stutter. A browser without them
+     simply shows the bird standing still.
+   - The sway is a true sine: each quarter is eased so the velocity carries
+     through zero rather than stopping at every keyframe. */
+.mascot {
+  animation:
+    mascot-drift 4s cubic-bezier(.37, 0, .63, 1) infinite alternate,
+    mascot-sway 10s linear infinite;
+}
+@keyframes mascot-drift {
+  from { translate: 0 0; }
+  to   { translate: 0 -3.4%; }
+}
+@keyframes mascot-sway {
+  0%   { rotate: 0deg;    animation-timing-function: cubic-bezier(.61, 1, .88, 1); }
+  25%  { rotate: 1.4deg;  animation-timing-function: cubic-bezier(.37, 0, .63, 1); }
+  75%  { rotate: -1.4deg; animation-timing-function: cubic-bezier(.12, 0, .39, 0); }
+  100% { rotate: 0deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot { animation: none; }
+  .wd.in { animation-duration: .01s; }
+  .start-btn.in { animation: none; }
+  .is-pulsing, .pg__ra.is-pulsing, .is-glowing { animation: none; }
+  .is-pulsing { stroke-width: var(--pulse-w1); }
+  .pg__dot.is-calling .pg__dot-halo { animation: none; opacity: .6; transform: scale(1); }
+  .pg__handle.is-calling .pg__handle-halo { animation: none; opacity: .6; }
+  .keypad__box.is-asking, .dropdown__btn.is-asking { animation: none; }
+  .stars__dot { animation: none; opacity: .5; }
+  .loader, .loader__fill { animation: none; transition: none; }
+}
