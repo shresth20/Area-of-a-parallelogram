@@ -1,14 +1,25 @@
 /* ==========================================================================
- * s7-practice.js -- the practice: six parallelograms, a keypad
+ * s7-practice.js -- the practice: six parallelograms, a number pad
  * --------------------------------------------------------------------------
- * Every question is laid out the same way: the figure in the left half, the
- * bird asking from the header, the keypad in the right half (the answer box
- * with its unit, the keys, Check). A wrong number turns the box soft amber
- * and shakes it; the bird answers it -- the slip the storyboard names for
- * that number, or the general one -- and the keys wait until it has; the
- * hints deepen with each try. The right number turns the box green, the
- * working writes in under the figure, and Continue arrives.
- *   1. guided: tap the base, tap its height, then 4 x 3
+ * Every question is laid out and played the same way, as the recall before
+ * it:
+ *   - the shape is drawn in the left half of the board;
+ *   - the bird stands on its perch in the right half and asks in its bubble;
+ *   - under it, centred in the right half, the answer line comes up:
+ *     "Area = [ ] cm²";
+ *   - pressing the box opens the number pad beside the bird -- the keys
+ *     (0 two wide, backspace beside it) and the check button; a hand taps
+ *     the box if it is left alone;
+ *   - Check. A wrong number turns the box amber and shakes it, the bubble
+ *     turns amber with the reason -- the slip the storyboard names for that
+ *     number, or the general one -- and the keys wait until it is said; the
+ *     hints on the figure deepen with each try. The formula itself is never
+ *     put up as a hint;
+ *   - the right number turns the box green, the pad folds away, the bubble
+ *     turns green and confetti bursts over the shape -- no working is
+ *     written out. Then Next, and the next question opens the same way.
+ *   1. guided: tap the base, tap its height (each lands under the bird),
+ *      then 4 x 3
  *   2. solo: the base on top, 8 x 3
  *   3. the slanting side as the base: 8 x 6 (not 12 x 6)
  *   4. the area given, the height asked for: 40 / 8
@@ -22,7 +33,7 @@
   if (!Pages || !Pages.addSection) { console.error('s7-practice.js: load js/pages.js first.'); return; }
   var K = Pages.kit;
   function T(k, r) { return global.T ? global.T(k, r) : k; }
-  var BEAT = K.BEAT, SHORT = K.SHORT, LOOK = K.LOOK;
+  var SHORT = K.SHORT;
   var LEFT = 255;                         /* the middle of the left half, in figure units */
 
   var dom = null, group = null, layerNodes = [];
@@ -41,57 +52,50 @@
     var midY = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
     return P.cm(spec, { x: LEFT - midX * k, y: (cy || 215) + midY * k }, k);
   }
-  /* A working stacked the way it is written on paper: the first line up to
-     its first "=", every later "= ..." on a line of its own. The string
-     itself stays in the locale file whole. */
-  function stacked(key) {
-    var parts = T(key).split(/\s=\s/);
-    return parts.map(function (p, i) { return i ? '= ' + p : p; });
-  }
-  function calcCard(rows) {
-    var c = W.card(dom.layer, { cls: 'card--formula card--calc', left: 26, bottom: 3, centre: true });
-    layerNodes.push(c.el);
-    var made = rows.map(function (r) { return c.row(r, 'is-result'); });
-    return { card: c, show: function () {
-      M.set(c.el, { opacity: 1 });
-      return Flow.anim(Beats.ruleIn(c.el)).then(function () {
-        return made.reduce(function (chain, r) { return chain.then(function () { return r.show(); }); }, Promise.resolve());
-      });
-    } };
-  }
-  function formulaCard() {
-    var c = W.card(dom.layer, { cls: 'card--formula', left: 26, top: 4, centre: true });
-    layerNodes.push(c.el);
-    var r = c.row(T('pFormula'), 'is-result');
-    M.set(r.el, { opacity: 1 });
-    return c;
+
+  /* ---- the right half: the bird on its perch ------------------------------- */
+  /* A wrong answer's reason: in the bubble, tinted amber. */
+  function no(key) { return K.perchSay(key, 'confused', 'no'); }
+  /* A line under the bird, centred in the right half (css/para.css:
+     .perch__under). */
+  function underBird() {
+    var slot = W.h('div', 'perch__under', K.perchRoot());
+    layerNodes.push(slot);
+    return slot;
   }
 
-  /* ---- the ask on the keypad -------------------------------------------------
-     q: { label, unit, answer, check, ask (key), feedback(value, tries) ->
-     promise, right (key), calc [rows], onRight() } */
-  function askNumber(q, g) {
-    var pad = W.keypad(dom.layer, { label: T(q.label || 'lblAreaEq'), unit: T(q.unit || 'unitCm2'), answer: q.answer,
-                                   check: T(q.check || 'btnCheckArea'), max: 3,
-                                   onWrong: function (v, tries) { return q.feedback(v, tries); } });
-    layerNodes.push(pad.el);
-    return K.say(q.ask)
+  /* ---- the ask: the answer line under the bird, the pad beside it ------------
+     q: { ask (key), label, unit, check, answer, feedback(value, tries) ->
+     promise, right (key), onRight() }; s: the shape (its centre takes the
+     confetti); g: its group, cleared once Next is pressed. No working is
+     written out: the right answer in its box is the whole of it. */
+  function askNumber(q, g, s) {
+    var pad = W.keypad(K.perchRoot(), {
+      label: T(q.label || 'lblAreaEq'), unit: T(q.unit || 'unitCm2'), answer: q.answer,
+      check: T(q.check || 'btnCheckArea'), max: 3, nudgeAfter: K.NUDGE_AFTER,
+      onWrong: function (v, tries) { return q.feedback(v, tries); }
+    });
+    layerNodes.push(pad.el, pad.pad);
+    return K.perchSay(q.ask)
       .then(function () { return pad.show(); })
       .then(function () { return pad.ask(); })
       .then(function (res) {
-        var card = calcCard(q.calc);
-        var done = q.onRight ? q.onRight() : null;
-        return Promise.all([K.say(q.right, 'happy'), card.show(), done]).then(function () { return res; });
+        var c = s.centre();
+        K.burstAt(c.x, c.y);
+        return Promise.all([K.perchRight(q.right, res), q.onRight ? q.onRight() : null]);
       })
-      .then(function () { return Flow.wait(SHORT); })
+      .then(function () { K.mascot().settle(); return Flow.wait(SHORT); })
       .then(function () { return K.handOver(); })
-      .then(function () {
-        var nodes = layerNodes.slice();
-        return Promise.all([Flow.anim(Beats.cardOut(nodes)), Flow.anim(Beats.clearFigure([g])), K.lineAway()]).then(function () {
-          nodes.forEach(drop);
-          if (g.parentNode) g.parentNode.removeChild(g);
-        });
-      });
+      .then(function () { return clearQuestion(g); });
+  }
+  /* Next pressed: the answer line, the pad and the shape go; the bird
+     stays on its perch for the next question. */
+  function clearQuestion(g) {
+    var nodes = layerNodes.slice();
+    return Promise.all([Flow.anim(Beats.cardOut(nodes)), Flow.anim(Beats.clearFigure([g]))]).then(function () {
+      nodes.forEach(drop);
+      if (g.parentNode) g.parentNode.removeChild(g);
+    });
   }
 
   /* ---- 1. guided: 4 x 3 --------------------------------------------------- */
@@ -99,38 +103,40 @@
     var k = 50;
     var g = P.el('g', {}, group);
     var pts = place([[0, 0], [4, 0], [5.5, 3], [1.5, 3]], k, 188);
-    var A = pts[0], B = pts[1], C = pts[2], D = pts[3];
+    var A = pts[0], B = pts[1], D = pts[3];
     var s = P.build(g, pts, { hits: true });
     var hgt = P.height(g, D, A, B, { cls: 'is-grey', raCls: 'is-orange', hit: true, label: cm(3), labelCls: 'is-grey', labelSide: 1, labelGap: 30 });
     var baseLbl = P.label(g, cm(4), { cls: 'is-grey', at: { x: P.mid(A, B).x, y: A.y + 26 } });
-    var facts = null, formula = null, grid = null;
-    return K.say('p0Intro')
-      .then(function () { return Flow.anim(Beats.drawShape(s, { time: 1.2 })); })
+    var facts = null, grid = null;
+    /* the shape drawn on the left while the bird jumps onto its perch on the
+       right with its first line */
+    var drawn = Flow.anim(Beats.drawShape(s, { time: 1.2 }))
       .then(function () { return Flow.anim(Beats.labelIn(baseLbl)); })
       .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
-      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
-      .then(function () { return K.say('p1Ask'); })
-      .then(function () { return K.say('p1TapBase'); })
+      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); });
+    return Promise.all([drawn, K.perchSay('p0Intro')])
+      .then(function () { return K.perchSay('p1Ask'); })
+      .then(function () { return K.perchSay('p1TapBase'); })
       /* step A: the base */
       .then(function () {
         g.classList.add('is-live');
         var hits = [s.hits[0], s.hits[1], s.hits[3], hgt.hit], lines = [s.sides[0], s.sides[1], s.sides[3], hgt.line];
         return K.tapOn(hits, {
           answer: 0, mark: function (i) { return lines[i]; },
-          onWrong: function () { return K.say('p1WrongBase', 'confused'); }
+          onWrong: function () { return no('p1WrongBase'); }
         }).then(function () { g.classList.remove('is-live'); });
       })
       .then(function () {
         s.sides[0].classList.remove('is-right');
         s.sides[0].classList.add('is-base');
         baseLbl.classList.remove('is-grey'); baseLbl.classList.add('is-teal');
-        facts = W.card(dom.layer, { cls: 'card--formula', left: 76, top: 22, centre: true });
-        layerNodes.push(facts.el);
+        /* what was found lands under the bird */
+        facts = W.card(underBird(), { cls: 'card--formula' });
         var r1 = facts.row(T('p1BaseIs'), 'is-result');
         M.set(r1.el, { opacity: 1 });
         return Promise.all([facts.show(), Flow.anim(Beats.partPulse(s.sides[0], 1))]);
       })
-      .then(function () { return K.say('p1TapHeight'); })
+      .then(function () { return K.perchSay('p1TapHeight'); })
       /* step B: its height */
       .then(function () {
         g.classList.add('is-live');
@@ -138,7 +144,7 @@
         hits.forEach(function (h) { h.classList.remove('is-done'); });
         return K.tapOn(hits, {
           answer: 0, mark: function (i) { return lines[i]; },
-          onWrong: function () { return K.say('p1WrongHeight', 'confused'); }
+          onWrong: function () { return no('p1WrongHeight'); }
         }).then(function () { g.classList.remove('is-live'); });
       })
       .then(function () {
@@ -149,25 +155,36 @@
         return Promise.all([r2.show(), Flow.anim(Beats.partPulse([hgt.line, hgt.ra], 1))]);
       })
       .then(function () { return K.autoTurn(700); })
-      /* step 2: the area */
-      .then(function () { return Flow.anim(Beats.cardOut(facts.el)).then(function () { drop(facts.el); }); })
+      /* step 2: the facts make way for the answer line */
+      .then(function () {
+        var slot = facts.el.parentNode;
+        return Flow.anim(Beats.cardOut(slot)).then(function () { drop(slot); });
+      })
       .then(function () {
         return askNumber({
-          ask: 'p2Ask', answer: 12, right: 'p2Right', calc: stacked('p2Calc'),
+          ask: 'p2Ask', answer: 12, right: 'p2Right',
+          /* the hints point at the figure only -- the formula is never shown */
           feedback: function (v, tries) {
-            if (tries === 1) {
-              formula = formula || formulaCard();
-              return Promise.all([K.say('p2Wrong1', 'confused'), formula.show().then(function () { return Flow.anim(Beats.cardLit(formula.el, 1.8)); })]);
-            }
-            var acts = [K.say('p2Wrong2', 'confused'), Flow.anim(Beats.partPulse([s.sides[0], hgt.line], 2)), Flow.anim(Beats.glowText([baseLbl, hgt.label], 2))];
+            var acts = [no(tries === 1 ? 'p2Wrong1' : 'p2Wrong2'), Flow.anim(Beats.partPulse([s.sides[0], hgt.line], 2))];
+            if (tries >= 2) acts.push(Flow.anim(Beats.glowText([baseLbl, hgt.label], 2)));
             if (tries >= 3) {
               if (!grid) grid = P.grid(g, { x: A.x, y: A.y }, k, 4, 3, { shear: D.x - A.x });
               acts.push(Flow.anim(Beats.fadeIn(grid, 0.5)));
             }
             return Promise.all(acts);
           }
-        }, g);
+        }, g, s);
       });
+  }
+
+  /* The shape's own marks drawn in after its outline: the base's label,
+     then the height -- dashed, its right angle, its label. */
+  function drawMarks(s, labels, hgt) {
+    return Flow.anim(Beats.drawShape(s, { time: 1.1 }))
+      .then(function () { return Flow.anim(labels.length > 1 ? Beats.labelsIn(labels, 0.2) : Beats.labelIn(labels[0])); })
+      .then(function () { return hgt.ext ? Flow.anim(Beats.dashedIn(hgt.ext, 0.4)) : null; })
+      .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
+      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); });
   }
 
   /* ---- 2. solo: the base on top, 8 x 3 --------------------------------------- */
@@ -175,27 +192,22 @@
     var k = 37;
     var g = P.el('g', {}, group);
     var pts = place([[1.5, 0], [9.5, 0], [8, 3], [0, 3]], k);
-    var A = pts[0], B = pts[1], C = pts[2], D = pts[3];
+    var A = pts[0], C = pts[2], D = pts[3];
     var s = P.build(g, pts, {});
     s.sides[2].classList.add('is-base');
     var hgt = P.height(g, A, D, C, { raCls: 'is-orange', label: cm(3), labelCls: 'is-orange', labelSide: -1, labelGap: 30 });
     var baseLbl = P.label(g, cm(8), { cls: 'is-teal', at: { x: P.mid(C, D).x, y: D.y - 24 } });
-    var formula = null;
-    return Flow.anim(Beats.drawShape(s, { time: 1.1 }))
-      .then(function () { return Flow.anim(Beats.labelIn(baseLbl)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
-      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
+    return drawMarks(s, [baseLbl], hgt)
       .then(function () {
         return askNumber({
-          ask: 'p3Ask', answer: 24, right: 'p3Right', calc: stacked('p3Calc'),
+          ask: 'p3Ask', answer: 24, right: 'p3Right',
           feedback: function (v, tries) {
-            var acts = [K.say(v === 11 ? 'p3Wrong' : 'p3WrongOther', 'confused')];
+            var acts = [no(v === 11 ? 'p3Wrong' : 'p3WrongOther')];
             if (tries >= 2) acts.push(Flow.anim(Beats.glowText([baseLbl, hgt.label], 2)), Flow.anim(Beats.partPulse([s.sides[2], hgt.line], 2)));
-            if (tries >= 3) { formula = formula || formulaCard(); acts.push(formula.show()); }
             return Promise.all(acts);
           },
           onRight: function () { return Flow.anim(Beats.partPulse([s.sides[2], hgt.line], 2)); }
-        }, g);
+        }, g, s);
       });
   }
 
@@ -212,23 +224,16 @@
     var hgt = P.height(g, D, B, C, { ext: true, raCls: 'is-orange', label: cm(6), labelCls: 'is-orange', labelSide: 1, labelGap: 30 });
     var baseLbl = P.label(g, cm(8), { cls: 'is-teal', at: P.add(P.mid(B, C), { x: 22, y: 22 }) });
     var botLbl = P.label(g, cm(12), { cls: 'is-grey', at: { x: P.mid(A, B).x - 60, y: A.y + 26 } });
-    var formula = null;
-    return Flow.anim(Beats.drawShape(s, { time: 1.1 }))
-      .then(function () { return Flow.anim(Beats.labelsIn([botLbl, baseLbl], 0.2)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.ext, 0.4)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
-      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
+    return drawMarks(s, [botLbl, baseLbl], hgt)
       .then(function () {
         return askNumber({
-          ask: 'p4Ask', answer: 48, right: 'p4Right', calc: stacked('p4Calc'),
-          feedback: function (v, tries) {
+          ask: 'p4Ask', answer: 48, right: 'p4Right',
+          feedback: function (v) {
             var key = v === 72 ? 'p4Wrong72' : v === 96 ? 'p4Wrong96' : 'p4WrongOther';
-            var acts = [K.say(key, 'confused'), Flow.anim(Beats.partPulse([s.sides[1], hgt.line], 2))];
-            if (tries >= 3) { formula = formula || formulaCard(); acts.push(formula.show()); }
-            return Promise.all(acts);
+            return Promise.all([no(key), Flow.anim(Beats.partPulse([s.sides[1], hgt.line], 2))]);
           },
           onRight: function () { return Flow.anim(Beats.partPulse([s.sides[1], hgt.line], 2)); }
-        }, g);
+        }, g, s);
       });
   }
 
@@ -237,26 +242,23 @@
     var k = 37;
     var g = P.el('g', {}, group);
     var pts = place([[0, 0], [8, 0], [10, 5], [2, 5]], k, 190);
-    var A = pts[0], B = pts[1], C = pts[2], D = pts[3];
+    var A = pts[0], B = pts[1], D = pts[3];
     var s = P.build(g, pts, {});
     s.sides[0].classList.add('is-base');
     var hgt = P.height(g, D, A, B, { raCls: 'is-orange', label: T('lblQcm'), labelCls: 'is-orange', labelSide: 1, labelGap: 32 });
     var baseLbl = P.label(g, cm(8), { cls: 'is-teal', at: { x: P.mid(A, B).x, y: A.y + 26 } });
+    /* what is given, over the shape */
     var area = W.card(dom.layer, { cls: 'card--formula', left: 26, top: 4, centre: true });
     layerNodes.push(area.el);
     var ar = area.row(T('p5Area'), 'is-result'); M.set(ar.el, { opacity: 1 });
-    return Flow.anim(Beats.drawShape(s, { time: 1.1 }))
-      .then(function () { return Flow.anim(Beats.labelIn(baseLbl)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
-      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
+    return drawMarks(s, [baseLbl], hgt)
       .then(function () { return area.show(); })
       .then(function () {
         return askNumber({
           ask: 'p5Ask', label: 'lblHeightEq', unit: 'unitCm', check: 'btnCheckHeight', answer: 5, right: 'p5Right',
-          calc: [T('p5Calc'), T('p5Check')],
           feedback: function (v) {
             var key = v === 32 ? 'p5Wrong32' : v === 320 ? 'p5Wrong320' : 'p5WrongOther';
-            return Promise.all([K.say(key, 'confused'), Flow.anim(Beats.emphasise(area.el))]);
+            return Promise.all([no(key), Flow.anim(Beats.emphasise(area.el))]);
           },
           onRight: function () {
             return Flow.anim(Beats.labelsOut(hgt.label)).then(function () {
@@ -264,7 +266,7 @@
               return Flow.anim(Beats.labelIn(hgt.label));
             });
           }
-        }, g);
+        }, g, s);
       });
   }
 
@@ -273,7 +275,7 @@
     var k = 35;
     var g = P.el('g', {}, group);
     var pts = place([[0, 0], [9, 0], [11, 4], [2, 4]], k);
-    var A = pts[0], B = pts[1], C = pts[2], D = pts[3];
+    var A = pts[0], B = pts[1], D = pts[3];
     var s = P.build(g, pts, { fillCls: 'is-garden' });
     var dots = P.el('path', { 'class': 'pg__garden-dots', d: P.pathOf(pts) }, g);
     s.g.insertBefore(dots, s.outline);
@@ -295,12 +297,12 @@
       .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
       .then(function () {
         return askNumber({
-          ask: 'p6Ask', unit: 'unitM2', answer: 36, right: 'p6Right', calc: stacked('p6Calc'),
+          ask: 'p6Ask', unit: 'unitM2', answer: 36, right: 'p6Right',
           feedback: function (v) {
             var key = v === 13 ? 'p6Wrong13' : v === 26 ? 'p6Wrong26' : 'p6WrongOther';
-            return Promise.all([K.say(key, 'confused'), Flow.anim(Beats.partPulse([s.sides[0], hgt.line], 2))]);
+            return Promise.all([no(key), Flow.anim(Beats.partPulse([s.sides[0], hgt.line], 2))]);
           }
-        }, g);
+        }, g, s);
       });
   }
 
@@ -309,40 +311,42 @@
     var k = 37;
     var g = P.el('g', {}, group);
     var pts = place([[0, 0], [6, 0], [10, 3], [4, 3]], k);
-    var A = pts[0], B = pts[1], C = pts[2], D = pts[3];
+    var A = pts[0], B = pts[1], C = pts[2];
     var s = P.build(g, pts, {});
     s.sides[0].classList.add('is-base');
     var hgt = P.height(g, C, A, B, { ext: true, raCls: 'is-orange', label: cm(3), labelCls: 'is-orange', labelSide: -1, labelGap: 30 });
     var baseLbl = P.label(g, cm(6), { cls: 'is-teal', at: { x: P.mid(A, B).x, y: A.y + 26 } });
     var slantLbl = P.label(g, cm(5), { at: P.add(P.mid(B, C), { x: -36, y: -4 }) });
-    var formula = null;
-    return Flow.anim(Beats.drawShape(s, { time: 1.1 }))
-      .then(function () { return Flow.anim(Beats.labelsIn([baseLbl, slantLbl], 0.2)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.ext, 0.4)); })
-      .then(function () { return Flow.anim(Beats.dashedIn(hgt.line, 0.5)); })
-      .then(function () { return Promise.all([Flow.anim(Beats.growLine(hgt.ra, 0.25)), Flow.anim(Beats.labelIn(hgt.label))]); })
+    return drawMarks(s, [baseLbl, slantLbl], hgt)
       .then(function () {
         return askNumber({
-          ask: 'p7Ask', answer: 18, right: 'p7Right', calc: stacked('p7Calc'),
+          ask: 'p7Ask', answer: 18, right: 'p7Right',
           feedback: function (v) {
             if (v === 30) {
               /* the slanting side and its label glow amber for the first line,
                  the marker pulses for the second */
-              return Promise.all([K.say('p7Wrong30a', 'confused'), Flow.anim(Beats.holdClass([s.sides[1], slantLbl], 'is-wrong', 2.2))])
-                .then(function () { return Promise.all([K.say('p7Wrong30b', 'confused'), Flow.anim(Beats.partPulse(hgt.ra, 3, 0.8))]); });
+              return Promise.all([no('p7Wrong30a'), Flow.anim(Beats.holdClass([s.sides[1], slantLbl], 'is-wrong', 2.2))])
+                .then(function () { return Promise.all([no('p7Wrong30b'), Flow.anim(Beats.partPulse(hgt.ra, 3, 0.8))]); });
             }
-            formula = formula || formulaCard();
-            return Promise.all([K.say('p7WrongOther', 'confused'), formula.show(),
+            return Promise.all([no('p7WrongOther'),
               Flow.anim(Beats.partPulse(s.sides[0], 1)).then(function () { return Flow.anim(Beats.partPulse(hgt.line, 1)); })]);
           },
           onRight: function () { return Flow.anim(Beats.partPulse([s.sides[0], hgt.line], 2)); }
-        }, g);
+        }, g, s);
       });
   }
 
   function scenePractice() {
     return K.wipeBoard()
-      .then(function () { group.removeAttribute('hidden'); })
+      /* the header shut first, so every shape is drawn at the size it keeps
+         and the bird's perch has the right half to itself */
+      .then(function () { return Flow.anim(K.collapseHeader(true)); })
+      .then(function () {
+        /* the perch laid out for the pad (css/para.css: .perch--keypad),
+           before the bird jumps onto it */
+        K.perchRoot().classList.add('perch--keypad');
+        group.removeAttribute('hidden');
+      })
       .then(q1).then(q2).then(q3).then(q4).then(q5).then(q6);
   }
 

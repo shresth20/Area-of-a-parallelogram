@@ -7,7 +7,7 @@
  *   W.card(host, o)           a dark panel in the layer, rows landing one by one
  *   W.caption(host, text, o)  a short chip on the figure
  *   W.button(host, text, o)   a small pill button on the stage
- *   W.keypad(host, o)         the answer box, the keys and the check button
+ *   W.keypad(host, o)         the answer line; its box opens the number pad
  *   W.dropdown(host, o)       a blank a formula is chosen from
  *   W.eq(host)                the equation built line by line
  * Every demonstration loop is endless and marked so Skip leaves it; the
@@ -268,32 +268,51 @@
   }
 
   /* ---- the keypad --------------------------------------------------------------
-     o: label ("Area ="), unit ("cm²"), answer (number), check (the button's
-     word), max (digits). ask({ onWrong(value, tries) -> promise }) resolves
-     { tries, auto } once the answer is in -- at once, put in, under Skip.
-     A wrong number turns the box soft amber and shakes it; the keys wait
-     while the reason is said; then the box is cleared for another try.
-     Never fills the answer in for the learner. */
+     Two pieces. The answer line -- label ("Area ="), the answer box, the unit
+     ("cm²") -- goes in `host`. The number pad -- the keys in a grid and the
+     check button under them -- goes in o.padHost (host if none), shut.
+     Pressing the box opens the pad (so does typing a digit); it stays open
+     until the answer is right, then folds away.
+     o: label, unit, answer (number), check (the button's word), max (digits),
+     nudgeAfter (ms before a hand taps the box, if the pad is still shut),
+     onWrong(value, tries) -> promise.
+     ask() resolves { tries, auto } once the answer is in -- at once, put in,
+     under Skip. A wrong number turns the box soft amber and shakes it; the
+     keys wait while the reason is said; then the box is cleared for another
+     try. Never fills the answer in for the learner. */
   function keypad(host, o) {
     o = o || {};
     var el = h('div', 'keypad', host);
     var entry = h('div', 'keypad__entry', el);
     var lab = h('span', 'keypad__label', entry); lab.textContent = o.label || '';
-    var box = h('span', 'keypad__box', entry);
-    box.setAttribute('role', 'status');
-    box.setAttribute('aria-live', 'polite');
+    var box = h('button', 'keypad__box', entry);
+    box.type = 'button';
+    box.setAttribute('aria-label', T('a11yAnswerBox'));
+    box.setAttribute('aria-haspopup', 'true');
+    box.setAttribute('aria-expanded', 'false');
     var val = h('span', 'keypad__value', box);
+    val.setAttribute('aria-live', 'polite');
     var tick = document.createElementNS(NS, 'svg');
     tick.setAttribute('class', 'keypad__tick'); tick.setAttribute('viewBox', '0 0 24 24');
+    tick.setAttribute('aria-hidden', 'true');
     var tp = document.createElementNS(NS, 'path');
     tp.setAttribute('d', 'M4 12.5 L9.5 18 L20 7'); tp.setAttribute('fill', 'none'); tp.setAttribute('stroke', 'currentColor');
     tp.setAttribute('stroke-width', '3.2'); tp.setAttribute('stroke-linecap', 'round'); tp.setAttribute('stroke-linejoin', 'round');
     tick.appendChild(tp); box.appendChild(tick);
     var unit = h('span', 'keypad__unit', entry); unit.innerHTML = html(o.unit || '');
-    var keys = h('div', 'keypad__keys', el);
+
+    /* the pad: a region (placed by css) with the panel in it -- the panel is
+       what springs open, so the region's own placement is never animated */
+    var pad = h('div', 'keypad__pad', o.padHost || host);
+    pad.setAttribute('hidden', '');
+    var panel = h('div', 'keypad__panel', pad);
+    panel.setAttribute('role', 'group');
+    panel.setAttribute('aria-label', T('a11yKeypad'));
+    var keys = h('div', 'keypad__keys', panel);
     var btns = [];
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0'].forEach(function (k) {
-      var b = h('button', 'keypad__key' + (k === '⌫' ? ' keypad__key--back' : ''), keys);
+    /* 1-9 in rows of three; then 0, two keys wide, and backspace beside it */
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '⌫'].forEach(function (k) {
+      var b = h('button', 'keypad__key' + (k === '⌫' ? ' keypad__key--back' : k === '0' ? ' keypad__key--zero' : ''), keys);
       b.type = 'button';
       b.textContent = k;
       b.dataset.key = k;
@@ -301,23 +320,51 @@
       M.button3d(b, { edge: 3 });
       btns.push(b);
     });
-    var check = h('button', 'keypad__check', el);
+    var check = h('button', 'keypad__check', panel);
     check.type = 'button';
     check.textContent = o.check || T('btnCheckArea');
     check.disabled = true;
     M.button3d(check, { edge: 4 });
 
     var value = '', live = false, busy = false, tries = 0, done = false, auto = false;
+    var opened = false, stopHand = null;
     var max = o.max || 3;
     function paint() {
       val.textContent = value;
       check.disabled = !value.length || !live || busy;
-      box.classList.toggle('is-asking', live && !busy && !value.length);
+      /* the box breathes while it waits to be pressed */
+      box.classList.toggle('is-asking', live && !busy && !value.length && !opened);
+    }
+    function unNudge() { if (stopHand) { stopHand(); stopHand = null; } }
+    /* the pad, opened from the box */
+    function open() {
+      if (opened || !live || done) return;
+      opened = true;
+      unNudge();
+      box.classList.add('is-open');
+      box.setAttribute('aria-expanded', 'true');
+      pad.removeAttribute('hidden');
+      paint();
+      Beats.pop();
+      quiet(Flow.anim(Beats.padIn(panel)));
+    }
+    /* and folded away again */
+    function close() {
+      if (!opened) return Promise.resolve();
+      opened = false;
+      box.classList.remove('is-open');
+      box.setAttribute('aria-expanded', 'false');
+      return Flow.anim(Beats.padOut(panel)).then(function () { pad.setAttribute('hidden', ''); });
+    }
+    function onBox(ev) {
+      if (!live || done) return;
+      if (ev && ev.clientX != null && M.tapRipple) M.tapRipple(ev.clientX, ev.clientY);
+      open();
     }
     function press(k) {
       if (!live || busy || done) return;
       if (k === '⌫') value = value.slice(0, -1);
-      else if (value.length < max && !(value === '' && k === '0' && max > 1 && false)) value += k;
+      else if (value.length < max) value += k;
       Beats.pop();
       paint();
     }
@@ -331,14 +378,16 @@
         box.classList.remove('is-wrong');
         box.classList.add('is-right');
         el.classList.add('is-done');
+        pad.classList.add('is-done');
         Beats.sfx('correct');
         quiet(Flow.anim(M.correct(box)));
         paint();
+        quiet(close());
         gate().dispatchEvent(new MouseEvent('click'));
         return;
       }
       busy = true;
-      el.classList.add('is-hearing');
+      pad.classList.add('is-hearing');
       box.classList.add('is-wrong');
       Beats.sfx('wrong');
       paint();
@@ -348,46 +397,70 @@
         box.classList.remove('is-wrong');
         value = '';
         busy = false;
-        el.classList.remove('is-hearing');
+        pad.classList.remove('is-hearing');
         paint();
       }, function () { busy = false; }));
     }
+    /* the keyboard as well: a digit opens the pad if it is shut */
     function onType(ev) {
       if (!live || busy || done) return;
-      if (/^[0-9]$/.test(ev.key)) { press(ev.key); ev.preventDefault(); }
+      if (/^[0-9]$/.test(ev.key)) { open(); press(ev.key); ev.preventDefault(); }
       else if (ev.key === 'Backspace') { press('⌫'); ev.preventDefault(); }
       else if (ev.key === 'Enter' && value.length) { onCheck(); ev.preventDefault(); }
     }
+    box.addEventListener('click', onBox);
     btns.forEach(function (b) { b.addEventListener('click', onKey); });
     check.addEventListener('click', onCheck);
     paint();
 
+    /* put in for the learner (a skip): the answer in the box, marked, the
+       pad shut, no chime */
+    function putIn() {
+      auto = true; done = true; live = false;
+      value = String(o.answer);
+      box.classList.remove('is-wrong'); box.classList.add('is-right');
+      el.classList.add('is-done'); pad.classList.add('is-done'); pad.classList.remove('is-hearing');
+      paint();
+      quiet(close());
+    }
+
     var api = {
-      el: el, box: box, check: check,
+      el: el, pad: pad, box: box, check: check,
       value: function () { return value; },
       show: function () { return Flow.anim(Beats.cardIn(el)); },
+      open: open,
+      close: close,
       ask: function () {
         live = true;
         paint();
         document.addEventListener('keydown', onType);
         if (Flow.isFast()) {
-          /* a skip: the answer put in, and marked, with no chime */
-          auto = true; done = true; live = false;
-          value = String(o.answer); box.classList.add('is-right'); el.classList.add('is-done'); paint();
+          putIn();
           document.removeEventListener('keydown', onType);
           return Promise.resolve({ tries: tries, auto: true });
         }
+        if (o.nudgeAfter) {
+          quiet(Flow.wait(o.nudgeAfter).then(function () {
+            if (live && !opened && !done && !stopHand) stopHand = handNudge(box, { x: 0.5, y: 0.62 });
+          }));
+        }
         return Flow.once(gate(), { auto: true }).then(function () {
           document.removeEventListener('keydown', onType);
-          if (!done) {              /* answered by a skip mid-way */
-            auto = true; done = true; live = false;
-            value = String(o.answer); box.classList.remove('is-wrong'); box.classList.add('is-right');
-            el.classList.remove('is-hearing'); el.classList.add('is-done'); paint();
-          }
+          unNudge();
+          if (!done) putIn();       /* answered by a skip mid-way */
           return { tries: tries, auto: auto };
-        }, function (err) { document.removeEventListener('keydown', onType); live = false; throw err; });
+        }, function (err) {
+          document.removeEventListener('keydown', onType);
+          unNudge();
+          live = false;
+          throw err;
+        });
       },
-      remove: function () { if (el.parentNode) el.parentNode.removeChild(el); }
+      remove: function () {
+        unNudge();
+        if (el.parentNode) el.parentNode.removeChild(el);
+        if (pad.parentNode) pad.parentNode.removeChild(pad);
+      }
     };
     return api;
   }

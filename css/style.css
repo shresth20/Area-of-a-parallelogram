@@ -401,6 +401,17 @@ body {
 }
 .tray[hidden] { display: none; }
 .tray--choice { gap: clamp(10px, 2%, 32px); }
+/* A rule set where the answers stood: the words alone, no plate. */
+.choice-line {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(17px, min(3.6vh, 2.4vw), 34px);
+  letter-spacing: .4px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--lime);
+}
 
 .chip,
 .choice {
@@ -676,14 +687,17 @@ body {
 /* The summary: nothing under the bird, so it perches lower and its long
    closing line clears the title plate. */
 .board.is-ending .perch__stand { bottom: 22cqh; }
-/* The row under the bird: the answers, or the working. */
+/* The row under the bird: the answers, or the working. The answers stand
+   on ONE line: the row reaches a little into the figure's half (the space
+   under the figure is empty there), and pages.js shrinks a set that would
+   still not fit. */
 .perch__answers {
   position: absolute;
-  left: 0;
+  left: -16cqw;
   right: 0;
   bottom: 15cqh;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
   gap: clamp(6px, 1.6cqw, 14px);
@@ -691,6 +705,8 @@ body {
   pointer-events: none;
 }
 .perch__answers .choice {
+  flex: none;
+  white-space: nowrap;
   pointer-events: auto;
   font-size: clamp(12px, 3.8cqw, 26px);
   padding: .36em .95em .42em;

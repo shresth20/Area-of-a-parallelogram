@@ -12,12 +12,15 @@
  *   3. a dotted space appears on the right; the learner drags the triangle
  *      into it (a hand shows the move once, and again after 8 s idle)
  *   4. the two pieces make a rectangle: the triangle turns blue, the outline
- *      glows once, "length" and "breadth" are named
- *   5. is the area still the same? -- two answers in the footer
+ *      glows once, the rectangle glides to the middle of the board, and
+ *      "length" and "breadth" are named
+ *   5. is the area still the same? -- two answers in the footer (while
+ *      answers show, the shape keeps its size and rises a little)
  *   6. what is the area of this rectangle? -- three answers, shuffled
- *      after every wrong tap, with hints that deepen each time
- * Then, on Continue, the rectangle shrinks to the right half and a lighter
- * copy of the parallelogram fades in on the left, for the next section.
+ *      after every wrong tap, with hints that deepen each time; once right,
+ *      the rule is set as plain text where the answers stood
+ * Then, on Continue, the rule and the names go; the next section clears the
+ * rectangle and draws its own figures.
  * ========================================================================== */
 (function (global) {
   'use strict';
@@ -31,6 +34,7 @@
   var SNAP = 26;              /* figure units: a release this close is caught     */
   var GRAB = 44;              /* figure units: a press this near the dot takes it  */
   var STEP = 14;              /* how far the cut triangle steps aside              */
+  var LIFT = 30;              /* figure units the shape rises while answers show   */
 
   var dom = null, group = null, layerNodes = [];
   /* the shape and the marks on it, kept across the pages */
@@ -40,6 +44,7 @@
   var tri = null, rest = null, triHit = null, target = null, triAt = { x: 0, y: 0 };
   var ghost = null, ghostFill = null, lenMark = null, brMark = null, lenLbl = null, brLbl = null, rectGlow = null, rectLine = null;
   var shift = null;           /* where the triangle sits in the rectangle: + base */
+  var centre = 0;             /* x that brings the finished rectangle to the middle */
 
   function build(kit) {
     dom = kit.dom();
@@ -70,6 +75,7 @@
     A = pts[0]; B = pts[1]; C = pts[2]; D = pts[3];
     F = { x: D.x, y: A.y };
     shift = { x: B.x - A.x, y: 0 };
+    centre = -(D.x - A.x) / 2;
     s = P.build(g, pts, {});
     Beats.putShape(s);
     /* the learner's line, and the height it becomes */
@@ -270,11 +276,6 @@
       .then(function () { return Flow.wait(BEAT); })
       .then(function () { return K.autoTurn(300); });
   }
-  function drop(el) {
-    if (el && el.parentNode) el.parentNode.removeChild(el);
-    var i = layerNodes.indexOf(el);
-    if (i >= 0) layerNodes.splice(i, 1);
-  }
 
   /* ======================================================================
    * Page 3 -- the triangle dragged into the dotted space
@@ -416,6 +417,12 @@
         M.set(rectLine, { opacity: 1 });
         return Flow.anim(Beats.glowOnce(rectGlow));
       })
+      /* the rectangle made, it glides to the middle of the board; the faint
+         parallelogram the next page compares it with goes along, unseen */
+      .then(function () {
+        M.set([ghost, ghostFill], { x: centre });
+        return Flow.anim(Beats.moveGroup(g, { x: centre }, 0.7, 'power2.inOut'));
+      })
       .then(function () {
         var acted = K.onPhrase('c5Whoa', 'rectangle', function () {
           return Flow.anim(Beats.growLine(lenMark, 0.5))
@@ -437,8 +444,8 @@
     if (!grids.length) {
       var k = P.MAIN.k;
       grids = [
-        P.grid(group, { x: F.x, y: F.y }, k, 6, 3, {}),
-        P.grid(group, { x: A.x, y: A.y }, k, 6, 3, { shear: D.x - A.x })
+        P.grid(group, { x: F.x + centre, y: F.y }, k, 6, 3, {}),
+        P.grid(group, { x: A.x + centre, y: A.y }, k, 6, 3, { shear: D.x - A.x })
       ];
     }
     var pieces = [rest, tri, lenMark, brMark, lenLbl, brLbl, rectLine];
@@ -462,7 +469,7 @@
   function pageSame() {
     return Flow.anim(Beats.fadeIn([ghostFill, ghost], 0.5))
       .then(function () { return K.say('c6Ask'); })
-      .then(function () { return K.offerChoices([T('c6OptYes'), T('c6OptNo')]); })
+      .then(function () { return K.offerChoices([T('c6OptYes'), T('c6OptNo')], { lift: LIFT }); })
       .then(function (btns) {
         return K.askUntilRight(btns, 0, {
           keep: true,
@@ -484,10 +491,10 @@
    * ====================================================================== */
   var OPTS = ['c7OptA', 'c7OptB', 'c7OptC'];
   function pageRectArea() {
-    var card = null, gridOn = false, btns = null;
+    var gridOn = false, btns = null;
     return Flow.anim(Beats.fadeTo([ghostFill, ghost], 0, 0.4))
       .then(function () { return K.say('c7Ask'); })
-      .then(function () { return K.offerChoices(OPTS.map(function (k) { return T(k); })); })
+      .then(function () { return K.offerChoices(OPTS.map(function (k) { return T(k); }), { lift: LIFT }); })
       .then(function (list) {
         btns = list;
         var rightBtn = btns[1];
@@ -512,36 +519,22 @@
       })
       .then(function () {
         if (grids.length) K.quiet(Flow.anim(Beats.fadeTo(grids[0], 0, 0.4)));
-        card = W.card(dom.layer, { cls: 'card--formula', left: 50, bottom: 3, centre: true });
-        layerNodes.push(card.el);
-        var row = card.row(T('c7Card'), 'is-result');
+        /* the answers make way, and the rule is set where they stood: plain
+           text, no plate */
         var acted = K.onPhrase('c7Right', 'Length', function () {
-          M.set(card.el, { opacity: 1 });
-          return Flow.anim(Beats.ruleIn(card.el)).then(function () { return row.show(); });
+          return K.choicesToLine(T('c7Card'));
         });
         return Promise.all([K.say('c7Right', 'happy'), acted]);
       })
       .then(function () { return Flow.wait(SHORT); })
       .then(function () { return K.handOver(); })
-      /* on Continue: the answers and the card go, the rectangle shrinks to
-         the right half, and the parallelogram comes back, lighter, on the left */
+      /* on Continue: the rule and the names go (the formula section takes
+         the rectangle away and draws its own figures) */
       .then(function () {
         return Promise.all([
           K.clearChoices(),
-          Flow.anim(Beats.cardOut(card.el)),
           Flow.anim(Beats.labelsOut([lenLbl, brLbl])),
           K.lineAway()
-        ]);
-      })
-      .then(function () {
-        drop(card.el);
-        var k = P.MATCH.k / P.MAIN.k;
-        var to = P.MATCH.rect;
-        var para = P.build(group, P.cm(P.MAIN.cm, P.MATCH.para, P.MATCH.k), { cls: 'pg--faint' });
-        para.fill.classList.add('is-faint');
-        return Promise.all([
-          Flow.anim(Beats.moveGroup(g, { x: to.x - F.x, y: to.y - F.y, scale: k }, 0.9, 'power3.inOut', F.x + ' ' + F.y)),
-          Flow.wait(400).then(function () { return Flow.anim(Beats.showShape(para, { time: 0.5 })); })
         ]);
       });
   }

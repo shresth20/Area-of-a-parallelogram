@@ -536,6 +536,20 @@
     if (list.length) tl.to(list, { opacity: 0, y: 10, scale: 0.94, duration: M.dur(0.3), ease: 'power2.in', stagger: M.gap(0.08) });
     return tl;
   }
+  /* The number pad, opened from its answer box: it springs out of the side
+     nearest the box, and folds back into it once the answer is in. */
+  var PAD_ORIGIN = '0% 72%';
+  function padIn(el) {
+    var tl = M.timeline({ willChange: el, willChangeValue: 'transform, opacity' });
+    tl.fromTo(el, { opacity: 0, scale: 0.6, x: -16, transformOrigin: PAD_ORIGIN },
+      { opacity: 1, scale: 1, x: 0, duration: M.dur(0.34), ease: 'back.out(1.5)' });
+    return tl;
+  }
+  function padOut(el) {
+    var tl = M.timeline({ willChange: el, willChangeValue: 'transform, opacity' });
+    tl.to(el, { opacity: 0, scale: 0.7, x: -12, transformOrigin: PAD_ORIGIN, duration: M.dur(0.24), ease: 'power2.in' });
+    return tl;
+  }
   function chipHome(chip) {
     return M.to(chip, { x: 0, y: 0, scale: 1, duration: M.dur(0.36), ease: 'power3.out', overwrite: 'auto' });
   }
@@ -774,7 +788,7 @@
     scissor: scissor, stepAside: stepAside, snapTo: snapTo, slideHome: slideHome, glowOnce: glowOnce,
     shake: shake, markWrong: markWrong, markRight: markRight,
     trayIn: trayIn, trayOut: trayOut, choiceRight: choiceRight, choiceWrong: choiceWrong,
-    optsIn: optsIn, optsOut: optsOut, chipHome: chipHome,
+    optsIn: optsIn, optsOut: optsOut, padIn: padIn, padOut: padOut, chipHome: chipHome,
     cardIn: cardIn, cardsIn: cardsIn, cardOut: cardOut, rowIn: rowIn, ruleIn: ruleIn, cardLit: cardLit, swapWord: swapWord, emphasise: emphasise,
     clearFigure: clearFigure,
     bubbleArm: bubbleArm, bubbleIn: bubbleIn, bubbleOut: bubbleOut,

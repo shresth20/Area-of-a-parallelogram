@@ -183,8 +183,8 @@
      (the height outside): then o.ext draws the base's extension, dotted,
      from the nearer end to the foot. o: cls, ra (marker: true, or
      'top' to put it at the top end, 'none'), raSize, dotAt ('foot'),
-     label (text), labelCls, labelSide (+1 / -1: which side of the line),
-     solid. Hands back { g, line, ext, ra, foot, label, layout }. */
+     label (text), labelCls, labelSide (+1 / -1: which side of the line,
+     or a function giving one, read on every layout), solid. Hands back { g, line, ext, ra, foot, label, layout }. */
   function height(host, from, a, b, o) {
     o = o || {};
     var g = el('g', { 'class': 'pg__h' }, host);
@@ -224,7 +224,7 @@
         h.ra.setAttribute('d', raPath(at, uu, vv, o.raSize || 14));
       }
       if (h.label) {
-        var m = mid(P, f), side = o.labelSide || 1;
+        var m = mid(P, f), side = (typeof o.labelSide === 'function' ? o.labelSide() : o.labelSide) || 1;
         var nrm = unit(perp(sub(f, P)));
         var q = add(m, mul(nrm, side * (o.labelGap == null ? 24 : o.labelGap)));
         h.label.setAttribute('x', round2(q.x + (o.labelDx || 0)));
@@ -370,13 +370,9 @@
      of the board; mainPts(origin, k) places it anywhere. */
   var MAIN = { cm: [[0, 0], [6, 0], [8, 3], [2, 3]], k: 56, origin: { x: 276, y: 294 }, footCm: [2, 0] };
   function mainPts(origin, k) { return cm(MAIN.cm, origin || MAIN.origin, k || MAIN.k); }
-  /* The matching page (section 3): the rectangle the cut made standing in
-     the right half, the parallelogram it came from in the left, both at the
-     same smaller scale, so the two can be compared side by side. */
-  var MATCH = { k: 38, para: { x: 89, y: 240 }, rect: { x: 623, y: 240 } };
 
   global.Para = {
-    NS: NS, el: el, round2: round2, MAIN: MAIN, MATCH: MATCH, mainPts: mainPts,
+    NS: NS, el: el, round2: round2, MAIN: MAIN, mainPts: mainPts,
     add: add, sub: sub, mul: mul, len: len, unit: unit, perp: perp, dotp: dotp, lerp: lerp, mid: mid, dist: dist,
     foot: foot, pathOf: pathOf, seg: seg, centroid: centroid, bbox: bbox, outward: outward,
     cm: cm, build: build, raPath: raPath,

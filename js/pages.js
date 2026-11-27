@@ -115,6 +115,7 @@
   function resetFooter() {
     dom.tray.setAttribute('hidden', ''); dom.tray.textContent = ''; chips = [];
     dom.choices.setAttribute('hidden', ''); dom.choices.textContent = ''; choiceBtns = [];
+    letGoFigure();
   }
   function ripple(ev, target) {
     var r = target.getBoundingClientRect();
@@ -571,19 +572,27 @@
     var P = perch || (perch = perchBuild());
     return P.open ? Promise.resolve() : perchOpen(P);
   }
+  /* The answers stand on one line (style.css): equal widths where they fit,
+     their own widths where not, and a set too long even for that shrunk
+     until it fits. */
   function perchChoices(labels) {
     var P = perch || (perch = perchBuild());
     P.answers.classList.remove('is-working', 'is-hearing');
     var btns = buildChoices(P.answers, labels);
+    var row = P.answers.getBoundingClientRect();
+    var cs = getComputedStyle(P.answers);
+    var room = row.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+             - (parseFloat(cs.columnGap || cs.gap) || 0) * (btns.length - 1);
+    var total = btns.reduce(function (sum, b) { return sum + b.getBoundingClientRect().width; }, 0);
+    if (room > 0 && total > room) {
+      var f = room / total;
+      btns.forEach(function (b) { b.style.fontSize = (parseFloat(getComputedStyle(b).fontSize) * f) + 'px'; });
+    }
     var w = 0, hh = 0;
     btns.forEach(function (b) {
       var r = b.getBoundingClientRect();
       w = Math.max(w, r.width); hh = Math.max(hh, r.height);
     });
-    var row = P.answers.getBoundingClientRect();
-    var cs = getComputedStyle(P.answers);
-    var room = row.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-             - (parseFloat(cs.columnGap || cs.gap) || 0) * (btns.length - 1);
     var same = w * btns.length <= room;
     btns.forEach(function (b) {
       if (same) b.style.minWidth = Math.ceil(w) + 'px';
@@ -607,6 +616,14 @@
     var P = perch || (perch = perchBuild());
     P.answers.classList.add('is-working');
     return P.answers;
+  }
+  /* The perch's own box (made, not opened): for a section that lays its own
+     controls out round the bird -- the practice's answer line under it and
+     its number pad beside it (css/para.css). Anything put in it goes with
+     the perch when the perch goes. */
+  function perchRoot() {
+    var P = perch || (perch = perchBuild());
+    return P.root;
   }
   /* The circle game's press, on the perch's pills: a wrong pill is spent and
      answered before any is live again; once only the answer is left it is
@@ -849,16 +866,91 @@
     return round();
   }
 
-  /* The choices arrive in the footer and leave it again. */
-  function offerChoices(labels) {
+  /* ---- the figure held at its size while the answers take the footer -------
+     Opening the footer row shrinks the stage, and with it the figure. With
+     o.lift (figure units) the figure keeps the size it had and only rises a
+     little: the row's change is measured, undone with a transform (in
+     percent of the figure's box, so a resize keeps it true), and the rise
+     eased in. Let go when the footer closes. */
+  var held = false;
+  function figureEls() { return [dom.figure, dom.layer]; }
+  function holdFigure(lift, open) {
+    var was = pictureAt(dom.figure.getBoundingClientRect());
+    dom.board.style.transition = 'none';
+    open();
+    var box = dom.figure.getBoundingClientRect();
+    var now = pictureAt(box);
+    void dom.board.offsetHeight;
+    dom.board.style.transition = '';
+    if (!was.scale || !now.scale || !box.height) return null;
+    held = true;
+    var at = { scale: was.scale / now.scale, xPercent: (was.x - now.x) / box.width * 100,
+               yPercent: (was.y - now.y) / box.height * 100, transformOrigin: 'center center' };
+    var up = (was.y - now.y - lift * was.scale) / box.height * 100;
+    M.set(figureEls(), at);
+    var tl = M.timeline({ willChange: figureEls(), willChangeValue: 'transform' });
+    tl.to(figureEls(), { yPercent: up, duration: M.dur(0.55), ease: 'power2.out' });
+    return tl;
+  }
+  function releaseFigure(close) {
+    if (!held) { close(); return null; }
+    held = false;
+    var was = pictureAt(dom.figure.getBoundingClientRect());
+    dom.board.style.transition = 'none';
+    close();
+    M.set(figureEls(), { clearProps: 'transform' });
+    var box = dom.figure.getBoundingClientRect();
+    var now = pictureAt(box);
+    void dom.board.offsetHeight;
+    dom.board.style.transition = '';
+    if (!was.scale || !now.scale || !box.height) return null;
+    M.set(figureEls(), { scale: was.scale / now.scale, xPercent: (was.x - now.x) / box.width * 100,
+                         yPercent: (was.y - now.y) / box.height * 100, transformOrigin: 'center center' });
+    var tl = M.timeline({ willChange: figureEls(), willChangeValue: 'transform' });
+    tl.to(figureEls(), { scale: 1, xPercent: 0, yPercent: 0, duration: M.dur(0.5), ease: 'power2.inOut' });
+    return tl;
+  }
+  function letGoFigure() {
+    if (!held) return;
+    held = false;
+    M.set(figureEls(), { clearProps: 'transform' });
+  }
+
+  /* The choices arrive in the footer and leave it again. o.lift: the figure
+     keeps its size and rises this many figure units (see holdFigure). */
+  function offerChoices(labels, o) {
+    o = o || {};
     choiceBtns = buildChoices(dom.choices, labels);
-    return Flow.anim(Beats.trayIn(dom.choices, choiceBtns)).then(function () { return choiceBtns; });
+    var rise = null;
+    if (o.lift != null && !held) {
+      M.set(choiceBtns, { opacity: 0 });
+      rise = holdFigure(o.lift, function () { dom.choices.removeAttribute('hidden'); });
+    }
+    return Promise.all([Flow.anim(Beats.trayIn(dom.choices, choiceBtns)), Flow.anim(rise)])
+      .then(function () { return choiceBtns; });
   }
   function clearChoices() {
     return Flow.anim(Beats.trayOut(dom.choices, choiceBtns)).then(function () {
-      dom.choices.setAttribute('hidden', '');
-      dom.choices.textContent = '';
       choiceBtns = [];
+      return Flow.anim(releaseFigure(function () {
+        dom.choices.setAttribute('hidden', '');
+        dom.choices.textContent = '';
+      }));
+    });
+  }
+  /* The answers make way for one line of plain text in their place (the
+     footer, and a held figure, stay as they are). The line is what the
+     next clearChoices takes away. */
+  function choicesToLine(text) {
+    return Flow.anim(Beats.trayOut(dom.choices, choiceBtns)).then(function () {
+      dom.choices.textContent = '';
+      dom.choices.removeAttribute('hidden');
+      var line = document.createElement('p');
+      line.className = 'choice-line';
+      global.MathText.write(line, text);
+      dom.choices.appendChild(line);
+      choiceBtns = [line];
+      return Flow.anim(Beats.ruleIn(line)).then(function () { return line; });
     });
   }
 
@@ -1186,7 +1278,7 @@
     buildChips: buildChips, buildChoices: buildChoices, shuffle: shuffle,
     chips: function (list) { if (list) chips = list; return chips; },
     choices: function (list) { if (list) choiceBtns = list; return choiceBtns; },
-    offerChoices: offerChoices, clearChoices: clearChoices,
+    offerChoices: offerChoices, clearChoices: clearChoices, choicesToLine: choicesToLine,
     handOver: handOver, autoTurn: autoTurn,
     openBoard: openBoard, wipeBoard: wipeBoard, interlude: interlude, centreStage: centreStage,
     collapseHeader: collapseHeader, openHeader: openHeader,
@@ -1198,7 +1290,7 @@
     celebrate: celebrate, praise: praise, burstAt: burstAt,
     askChoice: askChoice, askUntilRight: askUntilRight, tapOn: tapOn,
     perchSay: perchLine, perchVoice: perchVoice, perchChoices: perchChoices,
-    perchClear: perchClear, perchDown: perchDown, perchUp: perchUp, perchRow: perchRow,
+    perchClear: perchClear, perchDown: perchDown, perchUp: perchUp, perchRow: perchRow, perchRoot: perchRoot,
     perchAsk: perchAsk, perchRight: perchRight,
     sceneIndex: sceneIndex, runFrom: function (i, p) { return runFrom(i, p); },
     dragGuide: function (to) { return W.dragGuide(dom.tray, to); },
